@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 import time
 from redisHash import ActiveBars
-from redisTSBars import RealTimeBars
+from redisTimeseriesData import RealTimeBars
 from redis3barScore import StudyThreeBarsScore
 from redisTSCreateTable import CreateRedisStockTimeSeriesKeys
 
@@ -132,7 +132,7 @@ def MinInterval(symbol, period):
         bar = getNext5MinBar(symbol)
     bar['t'] = rfc3339timestamp()
     print('bar', bar)
-    rtb.redisAdd1Min(bar)
+    rtb.RedisAddBar(bar)
     ab.addSymbol(bar['S'])
 
 

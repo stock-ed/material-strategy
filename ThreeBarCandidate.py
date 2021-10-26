@@ -1,10 +1,12 @@
 from redisUtil import RedisTimeFrame, KeyName, SetInterval
-from redisTSBars import RealTimeBars
+from redisTimeseriesData import RealTimeBars
 from redisHash import StoreStack, ActiveBars
 from datetime import datetime
-from redisTSCreateTable import CreateRedisStockTimeSeriesKeys
+from RedisTimeseriesTable import CreateRedisStockTimeSeriesKeys
+from redisPubsub import RedisPublisher, RedisSubscriber
 import time
 import sys
+import json
 
 
 # StudyThreeBarsFilter
@@ -83,8 +85,6 @@ class StudyThreeBarsCandidates:
             self.stack = StoreStack()
         else:
             self.stack = stack
-        # rtb: RealTimeBars.  access to the redis real time data (timeseries).
-        self.rtb: RealTimeBars = RealTimeBars()
         # store: A temporary list to hold Stack candidates.
         self.store = []
         # ab: ActiveBars.  List of stocks that has its 1 minute data updated.
@@ -124,16 +124,8 @@ class StudyThreeBarsCandidates:
     def getStacks(self):
         self.stack.getAll()
 
-    def run(self, keys=None, getPriceData=None):
+    def run(self, keys, getPriceData):
         try:
-            # get all active symbols from the ActiveBars and Stack.
-            if (keys == None):
-                keys = self.getAllKeys()
-                tables = CreateRedisStockTimeSeriesKeys()
-                tables.CreateRedisStockSymbol(keys)
-            # default method to get the price data.
-            if (getPriceData == None):
-                getPriceData = self.rtb.RedisGetDataClose
             # for each active symbol, check and see if they match the 3 bar pattern.
             for symbol in keys:
                 self._candidate(symbol, RedisTimeFrame.MIN5, getPriceData)
@@ -146,6 +138,19 @@ class StudyThreeBarsCandidates:
             print('done')
         except Exception as e:
             print('run: ' + e)
+
+    def getPriceData(self, data):
+        result = []
+        for item in data:
+            result.append(item['close'])
+        return result
+
+    def CheckCandidate(self, jsondata: str):
+        data = json.loads(jsondata)
+        symbol = data['symbol']
+        keys = [].append(symbol)
+        self.run(keys, lambda api, symbol,
+                 timeframe: self.getPriceData(data.data))
 
 
 def testGetPriceData(item, symbol, timeframe):
@@ -163,16 +168,7 @@ def testGetPriceData(item, symbol, timeframe):
 app: StudyThreeBarsCandidates = None
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
-        keys = ['FANG']
-        app = StudyThreeBarsCandidates()
-        app.run(keys, testGetPriceData)
-    else:
-        print('StudyThreeBarsCandidates Begin')
-        app = StudyThreeBarsCandidates()
-        obj_now = datetime.now()
-        secWait = 60 - obj_now.second
-        time.sleep(secWait + 4)
-        app.run()
-        SetInterval(15, app.run)
+    candidate = StudyThreeBarsCandidates()
+    app = redisSubscriber = RedisSubscriber(
+        ['EVENT_BAR_CANDIDATE_CHECK'], None, candidate.CheckCandidate)
+    app.start()

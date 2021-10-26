@@ -15,7 +15,7 @@ from redistimeseries.client import Client
 #     return "data_" + suffix + "_" + time_frame + ":" + symbol
 
 
-class CreateRedisStockTimeSeriesKeys:
+class RedisTimeSeriesTable:
 
     def __init__(self, rts=None):
         self.rts = TimeSeriesAccess.connection(rts)
@@ -90,7 +90,7 @@ class CreateRedisStockTimeSeriesKeys:
 
 
 if __name__ == "__main__":
-    app = CreateRedisStockTimeSeriesKeys()
+    app = RedisTimeSeriesTable()
     app.run()
 
 # def get_bar_list(data, timeframe):

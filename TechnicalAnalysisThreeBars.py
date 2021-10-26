@@ -1,5 +1,5 @@
 from redis3barScore import StudyThreeBarsScore
-from redisTSBars import RealTimeBars
+from redisTimeseriesData import RealTimeBars
 from redisHash import StoreStack, StoreScore
 from redisUtil import RedisTimeFrame
 import requests

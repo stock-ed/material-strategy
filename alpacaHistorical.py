@@ -82,9 +82,10 @@ class AlpacaHistorical:
             prices = self.column(data, dtype)
             return prices
 
-    def HistoricalPrices(self, symbol, timeframe, datatype=None):
-        start = self.timeframe_start(timeframe)
-        end = self.timeframe_end(timeframe)
+    def HistoricalPrices(self, symbol, timeframe, datatype=None, starttime=None, endtime=None):
+        start = self.timeframe_start(
+            timeframe) if starttime is None else starttime
+        end = self.timeframe_end(timeframe) if endtime is None else endtime
         tf = '1Min' if RedisTimeFrame.REALTIME == timeframe else timeframe
         url = AlpacaHistorical.ALPACA_URL % (
             symbol, start, end, tf)

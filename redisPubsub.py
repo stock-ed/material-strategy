@@ -1,7 +1,7 @@
 import threading
 import redis
 import json
-from redisTSBars import RealTimeBars
+from redisTimeseriesData import RealTimeBars
 from redisUtil import KeyName, RedisAccess
 
 
@@ -52,7 +52,7 @@ class StreamBarsSubscriber(RedisSubscriber):
     def __init__(self):
         self.rtb = RealTimeBars()
         RedisSubscriber.__init__(self,
-                                 KeyName.EVENT_BAR2DB, callback=self.rtb.redisAdd1Min)
+                                 KeyName.EVENT_BAR2DB, callback=self.rtb.RedisAddBar)
 
 
 class StreamBarsPublisher(RedisPublisher):

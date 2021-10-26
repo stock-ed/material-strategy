@@ -4,7 +4,7 @@ import sys
 from redisUtil import AlpacaStreamAccess
 from redisPubsub import StreamBarsPublisher, StreamBarsSubscriber
 from redisTSCreateTable import CreateRedisStockTimeSeriesKeys
-from redisTSBars import RealTimeBars
+from redisTimeseriesData import RealTimeBars
 from datetime import datetime
 import time
 import alpaca_trade_api as alpaca
@@ -41,13 +41,9 @@ class MinuteBarStream:
     async def handleBar(bar):
         # print('bar: ', bar)
         # bar['t'] = 0
-
-        # publish/subscribe
         MinuteBarStream.publisher.publish(bar)
 
-\
-
-        @staticmethod
+    @staticmethod
     def run():
         logging.basicConfig(level=logging.INFO)
         MinuteBarStream.stream.subscribe_bars(MinuteBarStream.handleBar, '*')

@@ -1,23 +1,14 @@
 import logging
 import time
-import json
 from redisUtil import AlpacaStreamAccess, KeyName
 from redisPubsub import RedisSubscriber, RedisPublisher
-from redisTSCreateTable import CreateRedisStockTimeSeriesKeys
-from redis3barScore import StudyThreeBarsScore
 import asyncio
 import threading
-import sys
-
-import alpaca_trade_api as alpaca
-from alpaca_trade_api.stream import Stream
-from MinuteBarStream import MinuteBarStream
-from redisTSCreateTable import CreateRedisStockTimeSeriesKeys
 
 # from alpaca_trade_api.common import URL
 # from redistimeseries.client import Client
 # from alpaca_trade_api.rest import REST
-# from redisTSBars import RealTimeBars
+# from redisTimeseriesData import RealTimeBars
 
 # Trade schema:
 # T - string, message type, always “t”
@@ -49,12 +40,12 @@ def init():
     global conn
     conn = AlpacaStreamAccess.connection()
     # conn.run()
-    global process
-    process = StudyThreeBarsScore()
     global subscriber
     subscriber = RedisSubscriber(
-        KeyName.EVENT_NEW_CANDIDATES, callback=candidateEvent)
+        ['EVENT_TRADE_ADD'], callback=subscribeToTrade)
     subscriber.start()
+    global publisher
+    publisher = RedisPublisher(['EVENT_TRADE'])
 
 
 # PUBLISH RPS_THREEBARSTACK_NEW "{ 'data': { 'subscribe' : '[AAPL, GOOG]', 'unsubscribe': '[]' }}"
@@ -71,15 +62,10 @@ async def _handleTrade(trade):
     data = {'symbol': trade['S'],
             'close': trade['p'], 'volume': trade['s']}
     print('TRADE: ', data)
-    process.study(data)
+    publisher.publish(data)
 
 
-#
-# The system dynamically subscribe/unsubscribe to the real time trade stream
-# based on which symbol has meet the three bar pattern.
-#
-def candidateEvent(data):
-    print(data)
+def subscribeToTrade(data):
     if (conn == None):
         return
     try:
@@ -88,24 +74,19 @@ def candidateEvent(data):
         loop.set_debug(True)
     except RuntimeError:
         asyncio.set_event_loop(asyncio.new_event_loop())
-    # subscribe to Alpaca Trade data Stream
-    if ('subscribe' in data and len(data['subscribe']) > 0):
-        for symbol in data['subscribe']:
-            try:
-                print('subscribe to: ', symbol)
-                conn.subscribe_trades(_handleTrade, symbol)
-            except Exception as e:
-                print('subscribe failed: ', symbol)
-                print(e)
-    # unsubscribe from Alpaca Trade data Stream
-    if ('unsubscribe' in data and len(data['unsubscribe']) > 0):
-        for symbol in data['unsubscribe']:
-            try:
-                print('unsubscribe to: ', symbol)
-                conn.unsubscribe_trades(symbol)
-            except Exception as e:
-                print('unsubscribe failed: ', symbol)
-                print(e)
+    try:
+        symbol = data['symbol']
+        op = data['operation']
+        if (op == 'subscribe'):
+            print('subscribe to: ', symbol)
+            conn.subscribe_trades(_handleTrade, symbol)
+        else:
+            print('unsubscribe to: ', symbol)
+            conn.unsubscribe_trades(symbol)
+    except Exception as e:
+        print('subscribe failed: ', symbol)
+        print(e)
+
 
 #
 # The system dynamically subscribe/unsubscribe to the real time alpaca trade stream
@@ -132,10 +113,4 @@ def run():
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
-        app = CreateRedisStockTimeSeriesKeys()
-        app.run()
-    # app = CreateRedisStockTimeSeriesKeys()
-    # app.run()
     run()

@@ -8,13 +8,13 @@ from redisUtil import RedisTimeFrame
 #
 
 
-class StudyThreeBarsScore:
+class ThreeBarsScore:
     # stack: StoreStack: class to store and retrieve Stack data
     # rtb: RealTimeBars: class to retrieve real time data
 
     def __init__(self):
-        self.stack = StoreStack()
-        self.rtb = RealTimeBars()
+        self.stack: StoreStack = StoreStack()
+        self.rtb: RealTimeBars = RealTimeBars()
 
     # two scoring.  This one tests for basic accpetable trade.
     def _isPriceRangeOptimal(self, newPrice, price1, price2):
@@ -50,31 +50,21 @@ class StudyThreeBarsScore:
     # get stack data which includes the last two prices that meets three bar pattern
     # score the pricing data and save it into Score class.
     #
-    def Process(self, package, getRealTimeData, getStackData):
-        data = package
+    def Process(self, data):
         symbol = data['symbol']
         study = StoreScore(symbol)
         newPrice = data['close']
         newVolume = data['volume']
         self.rtb.RedisAddTrade(data)
-        realtime = getRealTimeData(
+        realtime = self.rtb.RedisGetRealtimeData(
             None, symbol, RedisTimeFrame.REALTIME)
-        stack = getStackData(symbol)
+        stack = StoreStack(symbol)
         if (realtime != None and stack != None):
             study.score.Score = self.ThreeBarPlay(newPrice, realtime, stack)
             study.save()
 
-    #
-    # call the scoring method
-    #
-    def study(self, package, getRealTimeData=None, getStackData=None):
-        if (getRealTimeData == None):
-            getRealTimeData = self.rtb.RedisGetDataClose
-        if (getStackData == None):
-            getStackData = self.stack.value
-        self.Process(package, getRealTimeData, getStackData)
-
     # print data for debugging
+
     def printAllScores(self, score):
         data = self.score.getAll()
         print(data)
@@ -107,46 +97,4 @@ def testGetRealTimeData(api, symbol, timeframe):
 
 
 if __name__ == "__main__":
-    package = {'close': 13.92,
-               'high': 14.57,
-               'low': 12.45,
-               'open': 13.4584,
-               'symbol': 'FANG',
-               'timestamp': 1627493640000000000,
-               'trade_count': 602,
-               'volume': 213907,
-               'vwap': 8.510506}
-    app = StudyThreeBarsScore()
-    app.study(package, getRealTimeData=testGetRealTimeData,
-              getStackData=testGetStackData)
-
-
-# STACK
-#     return {'symbol': symbol, 'value': {
-#         'firstPrice': 14.00,
-#         'secondPrice': 15.00,
-#         'thirdPrice': 14.52,
-#     }}
-
-
-# STOCK
-# {'close': 8.565,
-#  'high': 8.57,
-#  'low': 8.45,
-#  'open': 8.4584,
-#  'symbol': 'BTBT',
-#  'timestamp': 1627493640000000000,
-#  'trade_count': 602,
-#  'volume': 213907,
-#  'vwap': 8.510506}
-
-
-# def runThreeBarPlay():
-#     StudyThreeBars.run(redisTimeseries, redisCore, realtimeBar)
-
-
-# if __name__ == "__main__":
-#     obj_now = datetime.now()
-#     secWait = 61 - obj_now.second
-#     time.sleep(secWait)
-#     SetInterval(5, runThreeBarPlay)
+    pass
