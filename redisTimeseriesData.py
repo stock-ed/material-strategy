@@ -12,7 +12,6 @@ import time
 from alpacaHistorical import AlpacaHistorical
 import json
 import pandas as pd
-from redisPubsub import RedisSubscriber, RedisPublisher
 
 
 # def bar_key(symbol, suffix, time_frame):
@@ -46,14 +45,14 @@ class ComposeData:
                 result.append(oneitem)
         return result
 
-    def _bar_adjustBar(self, data, timeframe, ts=time.time()):
+    def AdjustBars(self, data, timeframe, ts=time.time()):
         # get timestamp
         switcher = {
             RedisTimeFrame.MIN1: 60,
             RedisTimeFrame.MIN2: 120,
             RedisTimeFrame.MIN5: 300,
         }
-        mins = switcher.get(timeframe, 60) * 1000
+        mins = switcher.get(timeframe, 60)
         tstamps = []
         ts1 = self.firstTimestamp(ts, data[0][0], mins)
         tstamps.append(ts1 - mins * 4)
@@ -69,7 +68,6 @@ class ComposeData:
 class RealTimeBars:
     def __init__(self, rts=None):
         self.rts: Client = TimeSeriesAccess.connection(rts)
-        self.publihser = RedisPublisher(['EVENT_BAR_CANDIATE_CHECK'])
 
     def RedisAddTrade(self, data):
         timeframe = RedisTimeFrame.REALTIME
@@ -93,17 +91,26 @@ class RealTimeBars:
             'data': data
         }
 
-    def publishCandiate(self, symbol):
-        #
-        data2 = self.RedisGetRealtimeData(None, symbol, RedisTimeFrame.MIN2)
-        jsondata2 = RealTimeBars.TimeseriesRealtimeDataFormat(
-            "threebars", symbol, RedisTimeFrame.MIN2, data2)
-        self.publihser.publish(jsondata2)
-        #
-        data5 = self.RedisGetRealtimeData(None, symbol, RedisTimeFrame.MIN5)
-        jsondata5 = RealTimeBars.TimeseriesRealtimeDataFormat(
-            "threebars", symbol, RedisTimeFrame.MIN5, data5)
-        self.publihser.publish(jsondata5)
+    # def RedisAddBar(self, data):
+    #     try:
+    #         timeframe = RedisTimeFrame.MIN1
+    #         ts = data['t'].seconds
+    #         symbol = data['S']
+    #         bar_list = []
+    #         bar1 = (bar_key(symbol, "close", timeframe), ts, data['c'])
+    #         bar2 = (bar_key(symbol, "high", timeframe), ts, data['h'])
+    #         bar3 = (bar_key(symbol, "low", timeframe), ts, data['l'])
+    #         bar4 = (bar_key(symbol, "open", timeframe), ts, data['o'])
+    #         bar5 = (bar_key(symbol, "volume", timeframe), ts, data['v'])
+    #         bar_list.append(bar1)
+    #         bar_list.append(bar2)
+    #         bar_list.append(bar3)
+    #         bar_list.append(bar4)
+    #         bar_list.append(bar5)
+    #         self.rts.madd(bar_list)
+    #     except Exception as e:
+    #         print('RedisAddBar:', e)
+    #         return None
 
     def RedisAddBar(self, data):
         try:
@@ -111,20 +118,11 @@ class RealTimeBars:
             ts = data['t'].seconds
             symbol = data['S']
             bar_list = []
-            bar1 = (bar_key(symbol, "close", timeframe), ts, data['c'])
-            bar2 = (bar_key(symbol, "high", timeframe), ts, data['h'])
-            bar3 = (bar_key(symbol, "low", timeframe), ts, data['l'])
-            bar4 = (bar_key(symbol, "open", timeframe), ts, data['o'])
-            bar5 = (bar_key(symbol, "volume", timeframe), ts, data['v'])
-            bar_list.append(bar1)
-            bar_list.append(bar2)
-            bar_list.append(bar3)
-            bar_list.append(bar4)
-            bar_list.append(bar5)
-            # for bar in bar_list:
-            #     self.rts.add(bar[0], bar[1], bar[2])
-            self.rts.madd(bar_list)
-            self.publishCandiate(symbol)
+            self.rts.add(bar_key(symbol, "close", timeframe), ts, data['c'])
+            self.rts.add(bar_key(symbol, "high", timeframe), ts, data['h'])
+            self.rts.add(bar_key(symbol, "low", timeframe), ts, data['l'])
+            self.rts.add(bar_key(symbol, "open", timeframe), ts, data['o'])
+            self.rts.add(bar_key(symbol, "volume", timeframe), ts, data['v'])
         except Exception as e:
             print('RedisAddBar:', e)
             return None
@@ -144,39 +142,32 @@ class RealTimeBars:
         if data == [] or data is None:
             return []
         composeData = ComposeData()
-        result = composeData._bar_adjustBar(data, timeframe)
-        if len(result) > 1:
-            revResult = []
-            for idx in range(len(result) - 1, -1, -1):
-                revResult.append(result[idx])
-            return revResult
-        else:
-            return result
+        result = composeData.AdjustBars(data, timeframe)
+        return result
+        # if len(result) > 1:
+        #     revResult = []
+        #     for idx in range(len(result) - 1, -1, -1):
+        #         revResult.append(result[idx])
+        #     return revResult
+        # else:
+        #     return result
 
     def _bar_historical(self, symbol, timeframe, datatype, startt, endt):
         historical = AlpacaHistorical()
-        data = historical.HistoricalPrices(
+        result = historical.HistoricalPrices(
             symbol, timeframe, datatype, startt, endt)
-        return data
-        # api = AlpacaAccess.connection()
-        # ts = TimeStamp()
-        # startt = ts.get_starttime(timeframe)
-        # endt = ts.get_endtime(timeframe)
+        return result
 
-        # bar_iter = api.get_bars_iter(
-        #     symbol, timeframe, startt, endt, limit=1000, adjustment='raw')
-        # return bar_iter
-
-    def mergeRealtimeData(symbol, close, open, high, low, volume):
-        result = {}
+    def mergeRealtimeData(self, symbol, close, open, high, low, volume):
+        result = []
         for ix in range(len(close)):
             item = {
-                "timestamp": close[ix].timestamp,
-                "close": close[ix].close,
-                'open': open[ix].open,
-                'high': high[ix].high,
-                'low': low[ix].low,
-                'volume': volume[ix].volume
+                "t": close[ix][0],
+                "c": close[ix][1],
+                'o': open[ix][1],
+                'h': high[ix][1],
+                'l': low[ix][1],
+                'v': volume[ix][1]
             }
             result.append(item)
         return result
@@ -194,8 +185,9 @@ class RealTimeBars:
         startt = ts.get_starttime(timeframe)
         endt = ts.get_endtime(timeframe)
         close = callMethod(self.rts, 'close', symbol, timeframe, startt, endt)
-        if close is None or len(close) < 10:
-            data = self._bar_historical(symbol, timeframe, None)
+        if close is None or len(close) < 5:
+            data = self._bar_historical(
+                symbol, timeframe, None, ts.DatetimeString(startt), ts.DatetimeString(endt))
             return RealTimeBars.TimeseriesRealtimeDataFormat("threebars", symbol, timeframe, data)
         else:
             open = callMethod(self.rts, 'open', symbol,
@@ -226,7 +218,7 @@ class RealTimeBars:
         return symbols
 
 
-if __name__ == "__main__":
-    rts = RealTimeBars()
-    redisSubscriber = RedisSubscriber(['EVENT_BAR'], None, rts.RedisAddBar)
-    redisSubscriber.start()
+# if __name__ == "__main__":
+#     rts = RealTimeBars()
+#     redisSubscriber = RedisSubscriber(['EVENT_BAR'], None, rts.RedisAddBar)
+#     redisSubscriber.start()

@@ -1,9 +1,11 @@
 import logging
 import time
-from redisUtil import AlpacaStreamAccess, KeyName
-from redisPubsub import RedisSubscriber, RedisPublisher
+import sys
 import asyncio
 import threading
+from redisUtil import AlpacaStreamAccess, KeyName
+from redisPubsub import RedisSubscriber, RedisPublisher
+from pubsubKeys import PUBSUB_KEYS
 
 # from alpaca_trade_api.common import URL
 # from redistimeseries.client import Client
@@ -65,6 +67,23 @@ async def _handleTrade(trade):
     publisher.publish(data)
 
 
+def subscription(data, isTestOnly=False):
+    try:
+        symbol = data['symbol']
+        op = data['operation']
+        if (op == 'SUBSCRIBE'):
+            print('subscribe to: ', symbol)
+            if not isTestOnly:
+                conn.subscribe_trades(_handleTrade, symbol)
+        else:
+            print('unsubscribe to: ', symbol)
+            if not isTestOnly:
+                conn.unsubscribe_trades(symbol)
+    except Exception as e:
+        print('subscribe failed: ', symbol)
+        print(e)
+
+
 def subscribeToTrade(data):
     if (conn == None):
         return
@@ -74,19 +93,7 @@ def subscribeToTrade(data):
         loop.set_debug(True)
     except RuntimeError:
         asyncio.set_event_loop(asyncio.new_event_loop())
-    try:
-        symbol = data['symbol']
-        op = data['operation']
-        if (op == 'subscribe'):
-            print('subscribe to: ', symbol)
-            conn.subscribe_trades(_handleTrade, symbol)
-        else:
-            print('unsubscribe to: ', symbol)
-            conn.unsubscribe_trades(symbol)
-    except Exception as e:
-        print('subscribe failed: ', symbol)
-        print(e)
-
+    subscription(data)
 
 #
 # The system dynamically subscribe/unsubscribe to the real time alpaca trade stream
@@ -106,6 +113,9 @@ def run():
     # unsubs = []
     # data = {'subscribe': subs, 'unsubscribe': unsubs}
     # publisher.publish(data)
+    app = RedisSubscriber(
+        PUBSUB_KEYS.EVENT_TRADE_SUBSCRIBE, None, subscribeToTrade)
+    app.start()
 
     print('RUNNING...')
     while 1:
@@ -113,4 +123,10 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    args = sys.argv[1:]
+    if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
+        data = {"symbol": "FANG",
+                "operation": "SUBSCRIBE"}
+        subscription(data, True)
+    else:
+        run()

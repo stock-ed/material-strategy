@@ -4,11 +4,13 @@ import redis
 import json
 from redisUtil import KeyName, RedisAccess, StudyScores
 from operator import itemgetter
-
+from pubsubKeys import PUBSUB_KEYS
 
 # Redis hash key name.
 # this class encapsuates the redis hash operations.
 #
+
+
 class RedisHash:
 
     def __init__(self, key: str, r=None, callback=None):
@@ -79,89 +81,39 @@ class StoreStack(RedisHash):
     def __init__(self, r=None, unsubCallback=None, key=None):
         if key is None:
             key = KeyName.KEY_THREEBARSTACK
-        self.subscribes = {}
-        self.unsubscribes = {}
-        self.unsubCallback = unsubCallback
         super().__init__(key, r)
         self.publisher = RedisPublisher(
             channels=KeyName.EVENT_NEW_CANDIDATES, r=self.redis)
 
-    @property
-    def get_subscribes(self):
-        return self.subscribes
 
-    @property
-    def get_unsubscribes(self):
-        return self.unsubscribes
+class StoreTradeSubscription(RedisHash):
+    def __init__(self, r=None, key=None):
+        if key is None:
+            key = KeyName.KEY_TRADE_SUBSCRIPTION
+        super().__init__(key, r)
 
-    # it intializes subscribe/unbsubscribe list
-    # it copies all symbols from stack to unsubscribe list.
-    # If the same symbol is added to the subscribe list, it will be removed from the unsubscribe list.
-    def openMark(self):
-        oneDict = self.getAll()
-        for key in oneDict:
-            self.unsubscribes[key.decode()] = ''
-        self.subscribes = {}
-
-    # subscribe - list of subscribe symbols
-    # unsubscribe - list of unsubscribe symbols
-    # store - list of subscribe symbols
-    def addSymbol(self, symbol, jsondata):
-        if (not self.isSymbolExist(symbol)):
-            self.subscribes[symbol] = symbol
-        if symbol in self.unsubscribes:
-            self.unsubscribes.pop(symbol)
+    def set(self, symbol):
+        jsondata = {}
         self.add(symbol, jsondata)
 
-    def getList(dict):
-        return list(map(itemgetter(0), dict.items()))
-
-    # This is called at the end of the Stack calculation.
-    # update subscribe, unsubscribe and store list.
-    # publish the subscribe/unsubscribe list to redis.
-    #
-    def closeMark(self):
-        subs = [*self.subscribes.keys()]
-        print('SUBS:')
-        print(subs)
-        unsubs = [*self.unsubscribes.keys()]
-        print('UNSUB:')
-        print(unsubs)
-        if len(unsubs) > 0:
-            for unsub in unsubs:
-                self.delete(unsub)
-                if (self.unsubCallback != None):
-                    self.unsubCallback(self.redis, unsub)
-        data = {'subscribe': subs, 'unsubscribe': unsubs}
-        self.publisher.publish(data)
-        self.subscribes = {}
-        self.unsubscribes = {}
-        oneDict = self.getAll()
-        print('CANDIDATES:')
-        print(oneDict)
-
+    def remove(self, symbol):
+        self.delete(symbol)
 
 # This class encapsulates the Study Scores function.
 # It encapsulates redis hash key Score.
 #
+
+
 class StoreScore (RedisHash):
-    def __init__(self, symbol, r=None, key=None):
+    def __init__(self, r=None, key=None):
         if key is None:
             key = KeyName.KEY_THREEBARSCORE
         super().__init__(key, r)
-        self.score: StudyScores = StudyScores(key, symbol)
-
-    def save(self):
-        # data = self.score.serialize_to_string()
-        data = self.score.serialize()
-        self.add(self.score.Symbol, data)
-
-    def load(self):
-        data = self.value(self.score.Symbol)
-        self.score.deserialize_from_string(data)
 
 # This is the Active Bar.  This is the list of one minute stock bar that was updated recently.
 # We are only interested in symbols in this list as we only focus on moving stock.
+
+
 class ActiveBars (RedisHash):
 
     def __init__(self, r=None):

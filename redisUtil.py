@@ -7,6 +7,7 @@ from alpaca_trade_api.stream import Stream
 from alpaca_trade_api.common import URL
 from redistimeseries.client import Client
 import alpaca_trade_api as alpaca
+import datetime
 
 
 class StudyScores:
@@ -117,8 +118,8 @@ class RealTimeStockData:
     ALPACA = 'ALPACA'
 
 
-def bar_key(symbol, suffix, timeframe):
-    return "data_" + suffix + "_" + timeframe + ":" + symbol
+def bar_key(symbol: str, suffix: str, timeframe: str):
+    return "data_" + suffix.lower() + "_" + timeframe.upper() + ":" + symbol
 
 
 class AlpacaAccess:
@@ -205,6 +206,7 @@ class KeyName:
     KEY_THREEBARSTACK_SUBSCRIBE = "STUDYTHREEBARSTACK_SUBSCRIBE"
     KEY_THREEBARSTACK_UNSUBSCRIBE = "STUDYTHREEBARSTACK_UNSUBSCRIBE"
     KEY_THREEBARSCORE = "STUDYTHREEBARSCORE"
+    KEY_TRADE_SUBSCRIPTION = "THREEBARTRADESUBSCRIPTION"
 
     STUDY_KEY_LEVELS = "STUDY_KEY_LEVELS"
 
@@ -235,17 +237,30 @@ class KeyName:
 #  'open': 136.04,
 #  'symbol': 'ALLE',
 #  'timestamp': 1627493640000000000,
+#               1634709690716
 #  'trade_count': 22,
 #  'volume': 712,
 #  'vwap': 136.030153}
 #
+
+class DictObj:
+    def __init__(self, in_dict: dict):
+        assert isinstance(in_dict, dict)
+        for key, val in in_dict.items():
+            if isinstance(val, (list, tuple)):
+                setattr(self, key, [DictObj(x) if isinstance(
+                    x, dict) else x for x in val])
+            else:
+                setattr(self, key, DictObj(val)
+                        if isinstance(val, dict) else val)
 
 
 class TimeStamp:
 
     @staticmethod
     def get_starttime(timeframe):
-        second = RetentionTime.SECOND
+        # second = RetentionTime.SECOND
+        second = 1
         minute = 60 * second
         hour = 60 * minute
         now_ms = TimeStamp.now()
@@ -261,8 +276,22 @@ class TimeStamp:
         return dt
 
     @staticmethod
+    def DatetimeString(seconds):
+        # timestamp to datetime
+        dt = datetime.datetime.fromtimestamp(seconds)
+        date_string = dt.isoformat('T') + 'Z'
+        return date_string
+
+    @staticmethod
     def get_endtime(timeframe):
         return TimeStamp.now()
+
+    @staticmethod
+    def rfc3339timestamp():
+        seconds = time.time()
+        ts = {"seconds": int(seconds)}
+        # dict to object
+        return DictObj(ts)
 
     @staticmethod
     def retention_in_ms(timeframe):
@@ -281,7 +310,9 @@ class TimeStamp:
 
     @staticmethod
     def now():
-        return int(time.time() * 1000)
+        # return timestamp in milliseconds
+        return int(time.time())
+        # return int(time.time() * 1000)
         # return int(time.time_ns() / 1000)
 
 

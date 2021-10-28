@@ -1,10 +1,11 @@
 STREAM-TRADE
 
-https://online.visual-paradigm.com/community/share/stocked-stream-trade-qehx1ofoh
+https://online.visual-paradigm.com/community/share/stocked-stream-trade-qeltgd2jw
 
 ### ACTOR
 
 Alpaca real-time trade data
+EVENT-TRADE-SUBSCRIBE
 
 #
 
@@ -32,11 +33,11 @@ Alpaca real-time trade data
 }
 ```
 
-EVENT_TRADE_ADD (publish)
+EVENT_TRADE_NEW (publish)
 
 #
 
-### EVENT_TRADE_ADD (subscribe)
+### EVENT_TRADE_NEW (subscribe)
 
 - Load the support data and put that into pub/sub call.
   EVENT-TRADE-SAVE (publish)

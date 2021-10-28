@@ -99,9 +99,8 @@ EVENT-BAR-CANDIDATE-CHECK (publish)
 }
 ```
 
-- Run the 3 bar candiate testing (3, 4 bar testing)
-
-# EVENT_BAR_TRADE_ADD (publish)
+Run the 3 bar candiate testing (3, 4 bar testing)
+EVENT_BAR_TRADE_ADD (publish)
 
 #
 

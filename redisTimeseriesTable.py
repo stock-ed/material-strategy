@@ -15,7 +15,7 @@ from redistimeseries.client import Client
 #     return "data_" + suffix + "_" + time_frame + ":" + symbol
 
 
-class RedisTimeSeriesTable:
+class TimeseriesTable:
 
     def __init__(self, rts=None):
         self.rts = TimeSeriesAccess.connection(rts)
@@ -34,33 +34,20 @@ class RedisTimeSeriesTable:
 
     def _createSymbol(self, rts, symbol, suffix, aggr, index, description, companyName):
         if suffix == 'close' or suffix == 'volume':
-            name0 = self._createSymbolItem(rts, symbol,  suffix, aggr,
+            name0 = self._createSymbolItem(rts, symbol, suffix, aggr,
                                            index, description, companyName, RedisTimeFrame.REALTIME)
             name10s = self._createSymbolItem(rts, symbol,  suffix, aggr,
                                              index, description, companyName, RedisTimeFrame.SEC10)
             rts.createrule(name0, name10s, aggr, 10*1000)
-        name1 = self._createSymbolItem(rts, symbol,  suffix, aggr,
+        name1 = self._createSymbolItem(rts, symbol, suffix, aggr,
                                        index, description, companyName, RedisTimeFrame.MIN1)
-        name2 = self._createSymbolItem(rts, symbol,  suffix, aggr,
+        name2 = self._createSymbolItem(rts, symbol, suffix, aggr,
                                        index, description, companyName, RedisTimeFrame.MIN2)
-        name5 = self._createSymbolItem(rts, symbol,  suffix, aggr,
+        name5 = self._createSymbolItem(rts, symbol, suffix, aggr,
                                        index, description, companyName, RedisTimeFrame.MIN5)
         # rts.createrule(name0, name1, aggr, 60*1000)
-        rts.createrule(name1, name2, aggr, 2*60*1000)
-        rts.createrule(name1, name5, aggr, 5*60*1000)
-
-    # def _get_new_assets(self, rts, active_assets):
-    #     new_symbols = []
-    #     for asset in active_assets:
-    #         key = bar_key(asset.symbol, "volume", RedisTimeFrame.REALTIME)
-    #         if (asset.tradable):
-    #             try:
-    #                 rts.get(key)
-    #             except:
-    #                 new_symbols.append(asset)
-    #         # if rts.get(key) is None:
-    #         #     new_symbols.append(asset)
-    #     return new_symbols
+        rts.createrule(name1, name2, aggr, 2*60)
+        rts.createrule(name1, name5, aggr, 5*60)
 
     def _createRedisStockSymbol(self, rts, symbol, index, description, companyName):
         self._createSymbol(rts, symbol, "high", "max",
@@ -77,7 +64,7 @@ class RedisTimeSeriesTable:
     def CreateRedisStockSymbol(self, symbols):
         for symbol in symbols:
             print(f"{symbol}  \t{symbol}")
-            name0 = bar_key(symbol, 'close', '1Min')
+            name0 = bar_key(symbol, 'close', RedisTimeFrame.MIN1)
             if not self.redis.exists(name0):
                 self._createRedisStockSymbol(
                     self.rts, symbol, '', '', 'SYMBOL-' + symbol)
@@ -90,60 +77,5 @@ class RedisTimeSeriesTable:
 
 
 if __name__ == "__main__":
-    app = RedisTimeSeriesTable()
+    app = TimeseriesTable()
     app.run()
-
-# def get_bar_list(data, timeframe):
-#     ts = data.timestramp
-#     bar_list = []
-#     bar_list.append(bar_key(data.symbol, "close", timeframe), ts, data.close)
-#     bar_list.append(bar_key(data.symbol, "high", timeframe), ts, data.high)
-#     bar_list.append(bar_key(data.symbol, "low", timeframe), ts, data.low)
-#     bar_list.append(bar_key(data.symbol, "open", timeframe), ts, data.open)
-#     bar_list.append(bar_key(data.symbol, "volume", timeframe), ts, data.volumn)
-#     return bar_list
-
-
-# def redis_add_bar(rts, data):
-#     timeframe = "0"
-#     bar_list = get_bar_list(data, timeframe)
-#     rts.madd(bar_list)
-
-
-# def timeframe_start(timeframe):
-#     switcher = {
-#         TimeFrame.Minue: datetime.now() - timedelta(days=7),
-#         TimeFrame.Hour: datetime.now() - timedelta(days=90),
-#         TimeFrame.Day: datetime.now() - timedelta(days=360),
-#     }
-#     dt = switcher.get(timeframe, datetime.now())
-#     date_string = dt.strftime('%Y-%m-%d')
-#     return date_string
-#     # return "2021-02-08"
-
-
-# def timeframe_end(timeframe):
-#     dt = datetime.now()
-#     date_string = dt.strftime('%Y-%m-%d %h:%M:%s')
-#     return date_string
-#     # return "2021-02-10"
-
-
-# def backfill_bar(rts, api, symbol, timeframe):
-#     bar_iter = api.get_bars_iter(
-#         symbol, timeframe, timeframe_start(timeframe), timeframe_end(timeframe), limit=10, adjustment='raw')
-#     for bar in bar_iter:
-#         bar_list = get_bar_list(bar.symbol, timeframe)
-#         rts.madd(bar_list)
-
-
-# def backfill_bars(rts, api, symbol):
-#     backfill_bar(rts, api, symbol, TimeFrame.Day)
-
-
-# def get_active_stocks(rts, assets):
-#     # remove all active stocks
-#     rts.zrembyrank('active_stocks', 0, -1)
-#     for asset in assets:
-#         rts.zadd('active_stocks', 0, assets.symbol)
-#     print ('get active stocks')

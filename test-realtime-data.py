@@ -1,12 +1,12 @@
-from redisUtil import SetInterval
+from redisUtil import SetInterval, TimeStamp
 import sys
 import json
 from datetime import datetime
 import time
 from redisHash import ActiveBars
 from redisTimeseriesData import RealTimeBars
+from redisTimeseriesTable import TimeseriesTable
 from redis3barScore import StudyThreeBarsScore
-from redisTSCreateTable import CreateRedisStockTimeSeriesKeys
 
 
 def barData(open, close, high, low, volume, symbol, change):
@@ -113,10 +113,11 @@ class DictObj:
 
 
 def rfc3339timestamp():
+    seconds = time.time()
     # return datetime.utcnow().isoformat() + 'Z'
     # time.time_ns()
-    seconds = time.time_ns() / 1000
-    seconds = seconds / 1000
+    # seconds = time.time_ns() / 1000
+    # seconds = seconds / 1000
     # seconds = seconds / 1000
     ts = {"seconds": int(seconds)}
     # dict to object
@@ -124,6 +125,7 @@ def rfc3339timestamp():
 
 
 def MinInterval(symbol, period):
+    print('MinAlert - ')
     if (period == '2MIN'):
         print('min-interval: 2MIN ')
         bar = getNext2MinBar(symbol)
@@ -132,6 +134,7 @@ def MinInterval(symbol, period):
         bar = getNext5MinBar(symbol)
     bar['t'] = rfc3339timestamp()
     print('bar', bar)
+    print('bar.t', bar['t'].seconds)
     rtb.RedisAddBar(bar)
     ab.addSymbol(bar['S'])
 
@@ -142,7 +145,7 @@ if __name__ == '__main__':
 
     args = sys.argv[1:]
     if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
-        app = CreateRedisStockTimeSeriesKeys()
+        app = TimeseriesTable()
         app.CreateRedisStockSymbol([symbol])
 
     test = rfc3339timestamp()
