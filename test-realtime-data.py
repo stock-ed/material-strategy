@@ -96,11 +96,14 @@ ab: ActiveBars = ActiveBars()
 process = StudyThreeBarsScore()
 
 
+publisherTrade: RedisPublisher = RedisPublisher(PUBSUB_KEYS.EVENT_TRADE_NEW)
+
+
 def TradeBar(symbol: str):
     data = {'symbol': symbol,
             'close': 10.45, 'volume': 100}
-    print('TRADE: ', data)
-    process.study(data)
+    logging.info(f'TRADE: {data}')
+    publisherTrade.publish(data)
 
 
 class DictObj:
@@ -165,4 +168,4 @@ if __name__ == '__main__':
 
     print('starting 1 minute data cycle.')
     SetInterval(60, lambda: MinInterval(symbol, period))
-    # SetInterval(3, lambda: TradeBar(symbol))
+    SetInterval(5, lambda: TradeBar(symbol))

@@ -44,7 +44,7 @@ def init():
     # conn.run()
     global subscriber
     subscriber = RedisSubscriber(
-        ['EVENT_TRADE_ADD'], None, callback=subscribeToTrade)
+        PUBSUB_KEYS.EVENT_TRADE_SUBSCRIBE, None, callback=subscribeToTrade)
     subscriber.start()
     global publisher
     publisher = RedisPublisher(['EVENT_TRADE'])
@@ -81,8 +81,7 @@ def subscription(data, isTestOnly=False):
             if not isTestOnly:
                 conn.unsubscribe_trades(symbol)
     except Exception as e:
-        print('subscribe failed: ', symbol)
-        print(e)
+        logging.warning(f'EVENT-TRADE.subscription exception - {e}')
 
 
 def subscribeToTrade(data):
@@ -95,6 +94,9 @@ def subscribeToTrade(data):
         loop.set_debug(True)
     except RuntimeError:
         asyncio.set_event_loop(asyncio.new_event_loop())
+    except Exception as e:
+        logging.error(f'EVENT-TRADE.subscribeToTrade exception - {e}')
+        return
     subscription(data)
 
 #

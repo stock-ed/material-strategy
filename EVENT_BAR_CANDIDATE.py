@@ -32,8 +32,9 @@ class EventBarCandidate:
         if data2 is not None and arrLen > 4:
             self.publisher_check.publish(data2)
         else:
+            data3 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
             logging.info(
-                f"EventBarCandidate.publish2Min: Not Enough {arrLen}")
+                f"EventBarCandidate.publish2Min: Not Enough {timeframe} {arrLen}")
 
     def AddBar(self, data=None):
         try:
