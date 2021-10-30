@@ -33,6 +33,11 @@ class EventBarCandidate:
             self.publisher_check.publish(data2)
         else:
             data3 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
+            data4 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
+            data5 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
+            data6 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
+            data7 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
+            data8 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
             logging.info(
                 f"EventBarCandidate.publish2Min: Not Enough {timeframe} {arrLen}")
 

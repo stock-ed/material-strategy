@@ -268,7 +268,7 @@ class TimeStamp:
             RedisTimeFrame.REALTIME: now_ms - (second * 30),
             RedisTimeFrame.SEC10: now_ms - (minute * 5),
             RedisTimeFrame.MIN1: now_ms - (minute * 5),
-            RedisTimeFrame.MIN2: now_ms - (minute * 10),
+            RedisTimeFrame.MIN2: now_ms - (minute * 20),
             RedisTimeFrame.MIN5: now_ms - (hour),
             RedisTimeFrame.MIN30: now_ms - (hour * 4),
         }
