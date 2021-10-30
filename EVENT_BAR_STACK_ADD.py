@@ -1,5 +1,6 @@
 import sys
 import json
+import logging
 from redisHash import StoreStack
 from redisPubsub import RedisPublisher, RedisSubscriber
 from pubsubKeys import PUBSUB_KEYS
@@ -10,6 +11,8 @@ class RedisStack:
     def __init__(self):
         # StoreStack: class to access the redis Stack.
         self.stack = StoreStack()
+        self.subscriber = RedisSubscriber(
+            PUBSUB_KEYS.EVENT_BAR_STACK_ADD, None, self.addStock)
 
     def isFieldExist(self, store, data):
         if store is None:
@@ -20,7 +23,7 @@ class RedisStack:
                     return True, True
                 else:
                     return True, False
-        return False, False
+        return False, True
 
     def popField(self, store, datatype, dataperiod):
         for field in store:
@@ -28,29 +31,46 @@ class RedisStack:
                 store.remove(field)
         return store
 
-    def run(self, data):
-        symbol = data['symbol']
-        store = [] if self.stack.value(
-            symbol) is None else self.stack.value(symbol)
-        if data['action']["operation"] == 'ADD':
-            fieldExist, newData = self.isFieldExist(store, data)
-            if fieldExist and not newData:
-                return
-            elif fieldExist:
-                store = self.popField(store, data['type'], data['period'])
-                self.stack.delete(symbol)
-                store.append(data)
+    def addStock(self, data):
+        logging.info(f"EVENT-BAR-STACK-ADD: start - {data}")
+        try:
+            symbol = data['symbol']
+            store = [] if self.stack.value(
+                symbol) is None else self.stack.value(symbol)
+            if data['action']["operation"] == 'ADD':
+                fieldExist, newData = self.isFieldExist(store, data)
+                if fieldExist and not newData:
+                    return
+                elif fieldExist:
+                    store = self.popField(store, data['type'], data['period'])
+                    self.stack.delete(symbol)
+                    store.append(data)
+                else:
+                    store.append(data)
+                self.stack.add(symbol, store)
+            elif data['action']["operation"] == 'DEL':
+                fieldExist, newData = self.isFieldExist(store, data)
+                if fieldExist:
+                    # store = self.popField(store, data['type'], data['period'])
+                    self.stack.delete(symbol)
             else:
-                store.append(data)
-            self.stack.add(symbol, store)
-        elif data['action']["operation"] == 'DEL':
-            fieldExist, newData = self.isFieldExist(store, data)
-            if fieldExist:
-                # store = self.popField(store, data['type'], data['period'])
-                self.stack.delete(symbol)
-        else:
-            print("Error: Unknown operation")
-            sys.exit(1)
+                logging.warning("Error: Unknown operation")
+        except Exception as e:
+            logging.error(f"EVENT-BAR-STACK-ADD: start {e}")
+
+    def start(self):
+        try:
+            self.subscriber.start()
+        except KeyboardInterrupt:
+            self.subscriber.stop()
+        except Exception as e:
+            logging.error(e)
+
+    @staticmethod
+    def run():
+        logging.info("Starting RedisStack")
+        candidate = RedisStack()
+        candidate.start()
 
 
 if __name__ == "__main__":
@@ -74,10 +94,5 @@ if __name__ == "__main__":
                     {"indicator": "price", "timeframe": "2Min",
                      "filter": [10.4, 10.6], "timestamp": 1635370080, "operation": "ADD"}}
         app = RedisStack()
-        app.run(data)
+        app.start(data)
         print('done')
-    else:
-        candidate = RedisStack()
-        app = redisSubscriber = RedisSubscriber(
-            PUBSUB_KEYS.EVENT_BAR_STACK_ADD, None, candidate.run)
-        app.start()

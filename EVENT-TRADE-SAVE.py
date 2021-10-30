@@ -21,5 +21,5 @@ if __name__ == "__main__":
         app.run(trade)
     else:
         sub = RedisSubscriber(
-            PUBSUB_KEYS.EVENT_TRADE_SAVE, app.run)
+            PUBSUB_KEYS.EVENT_TRADE_SAVE, None, app.run)
         sub.start()

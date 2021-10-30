@@ -44,7 +44,7 @@ def init():
     # conn.run()
     global subscriber
     subscriber = RedisSubscriber(
-        ['EVENT_TRADE_ADD'], callback=subscribeToTrade)
+        ['EVENT_TRADE_ADD'], None, callback=subscribeToTrade)
     subscriber.start()
     global publisher
     publisher = RedisPublisher(['EVENT_TRADE'])
@@ -69,6 +69,7 @@ async def _handleTrade(trade):
 
 def subscription(data, isTestOnly=False):
     try:
+        logging.info(f'EVENT-TRADE.subscription start - {data}')
         symbol = data['symbol']
         op = data['operation']
         if (op == 'SUBSCRIBE'):
@@ -85,9 +86,10 @@ def subscription(data, isTestOnly=False):
 
 
 def subscribeToTrade(data):
-    if (conn == None):
-        return
+    logging.info(f'EVENT-TRADE.subscribeToTrade start - {data}')
     try:
+        if (conn == None):
+            return
         # make sure we have an event loop, if not create a new one
         loop = asyncio.get_event_loop()
         loop.set_debug(True)
@@ -101,9 +103,8 @@ def subscribeToTrade(data):
 #
 
 
-def run():
-    logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-                        level=logging.INFO)
+def StreamTradeRun():
+    logging.info('StreamTradeRun')
     threading.Thread(target=init).start()
 
     loop = asyncio.get_event_loop()
@@ -118,8 +119,8 @@ def run():
     app.start()
 
     print('RUNNING...')
-    while 1:
-        pass
+    # while 1:
+    #     pass
 
 
 if __name__ == "__main__":
@@ -129,4 +130,4 @@ if __name__ == "__main__":
                 "operation": "SUBSCRIBE"}
         subscription(data, True)
     else:
-        run()
+        StreamTradeRun()

@@ -1,4 +1,4 @@
-from redisUtil import SetInterval, TimeStamp
+import logging
 import sys
 import json
 from datetime import datetime
@@ -7,6 +7,9 @@ from redisHash import ActiveBars
 from redisTimeseriesData import RealTimeBars
 from redisTimeseriesTable import TimeseriesTable
 from redis3barScore import StudyThreeBarsScore
+from redisPubsub import RedisPublisher
+from pubsubKeys import PUBSUB_KEYS
+from redisUtil import SetInterval
 
 
 def barData(open, close, high, low, volume, symbol, change):
@@ -124,6 +127,9 @@ def rfc3339timestamp():
     return DictObj(ts)
 
 
+publisher: RedisPublisher = RedisPublisher(PUBSUB_KEYS.EVENT_BAR_CANDIDATE)
+
+
 def MinInterval(symbol, period):
     print('MinAlert - ')
     if (period == '2MIN'):
@@ -133,10 +139,12 @@ def MinInterval(symbol, period):
         print('min-interval: 5MIN ')
         bar = getNext5MinBar(symbol)
     bar['t'] = rfc3339timestamp()
+    seconds = bar['t'].seconds
+    bar['t'] = seconds
     print('bar', bar)
-    print('bar.t', bar['t'].seconds)
-    rtb.RedisAddBar(bar)
-    ab.addSymbol(bar['S'])
+    publisher.publish(bar)
+    # rtb.RedisAddBar(bar)
+    # ab.addSymbol(bar['S'])
 
 
 if __name__ == '__main__':

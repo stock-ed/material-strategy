@@ -1,3 +1,4 @@
+import logging
 import sys
 import json
 from redisHash import StoreTradeSubscription
@@ -9,14 +10,38 @@ class RedisTradeSubscription:
     def __init__(self):
         self.subscription = StoreTradeSubscription()
         self.publisher = RedisPublisher(PUBSUB_KEYS.EVENT_TRADE_SUBSCRIBE)
+        self.subscriber = RedisSubscriber(
+            PUBSUB_KEYS.EVENT_BAR_TRADE_ADD, None, self.addStock)
 
-    def run(self, data):
-        symbol = data['symbol']
-        if not self.subscription.isSymbolExist(symbol) and data['action']['operation'] == "ADD":
-            self.subscription.set(symbol)
-            data = {"symbol": symbol,
-                    "operation": "SUBSCRIBE"}
-            self.publisher.publish(data)
+    def addStock(self, data):
+        logging.info(f"EVENT_TRADE_ADD.RedisTradeSubscription.start: {data}")
+        try:
+            symbol = data['symbol']
+            if not self.subscription.isSymbolExist(symbol) and data['action']['operation'] == "ADD":
+                self.subscription.set(symbol)
+                data = {"symbol": symbol,
+                        "operation": "SUBSCRIBE"}
+                self.publisher.publish(data)
+        except Exception as e:
+            logging.error(
+                f"Error EVENT_TRADE_ADD.RedisTradeSubscription.start: {e}")
+            sys.exit(1)
+
+    def start(self):
+        try:
+            self.subscriber.start()
+        except KeyboardInterrupt:
+            self.subscriber.stop()
+        except Exception as e:
+            logging.error(e)
+
+    @staticmethod
+    def run():
+        logging.info("EVENT_TRADE_ADD.RedisTradeSubscription.run")
+        candidate = RedisTradeSubscription()
+        app = RedisSubscriber(
+            PUBSUB_KEYS.EVENT_BAR_TRADE_ADD, None, candidate.start)
+        app.start()
 
 
 if __name__ == "__main__":
@@ -36,10 +61,5 @@ if __name__ == "__main__":
                     {"indicator": "price", "timeframe": "2Min",
                      "filter": [10.4, 10.6], "timestamp": 1635370080, "operation": "ADD"}}
         app = RedisTradeSubscription()
-        app.run(data)
+        app.start(data)
         print('done')
-    else:
-        candidate = RedisTradeSubscription()
-        app = redisSubscriber = RedisSubscriber(
-            PUBSUB_KEYS.EVENT_BAR_TRADE_ADD, None, candidate.run)
-        app.start()

@@ -38,5 +38,5 @@ if __name__ == "__main__":
         print('done')
     else:
         sub = RedisSubscriber(
-            PUBSUB_KEYS.EVENT_TRADE_NEW, app.run)
+            PUBSUB_KEYS.EVENT_TRADE_NEW, None, app.run)
         sub.start()

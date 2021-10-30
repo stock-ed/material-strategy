@@ -115,7 +115,7 @@ class RealTimeBars:
     def RedisAddBar(self, data):
         try:
             timeframe = RedisTimeFrame.MIN1
-            ts = data['t'].seconds
+            ts = data['t']  # .seconds
             symbol = data['S']
             bar_list = []
             self.rts.add(bar_key(symbol, "close", timeframe), ts, data['c'])

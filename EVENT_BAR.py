@@ -11,19 +11,20 @@ import json
 
 
 class MinuteBarStream:
-    log = None
     publisher: RedisPublisher = None
     stream: Stream = None
 
     @staticmethod
     def init(conn: Stream = None):
-        MinuteBarStream.log = logging.getLogger(__name__)
-        MinuteBarStream.publisher = RedisPublisher(
-            PUBSUB_KEYS.EVENT_BAR_CANDIDATE)
-        if (conn == None):
-            MinuteBarStream.stream = AlpacaStreamAccess.connection()
-        else:
-            MinuteBarStream.stream = conn
+        try:
+            MinuteBarStream.publisher = RedisPublisher(
+                PUBSUB_KEYS.EVENT_BAR_CANDIDATE)
+            if (conn == None):
+                MinuteBarStream.stream = AlpacaStreamAccess.connection()
+            else:
+                MinuteBarStream.stream = conn
+        except Exception as e:
+            logging.warning(f'Exception from websocket connection (init): {e}')
 
     @staticmethod
     def run_connection(conn):
@@ -42,24 +43,29 @@ class MinuteBarStream:
     # timestamp is not serialzieable, so we need to convert it to a string.
     @staticmethod
     async def handleBar(bar):
-        # print('bar: ', bar)
-        bar['t'] = 0
-        data = json.dumps(bar)
+        logging.info('bar: ', bar)
+        seconds = bar['t'].seconds
+        bar['t'] = seconds
         MinuteBarStream.publisher.publish(bar)
 
     @staticmethod
-    def run():
+    def start():
         try:
-            logging.basicConfig(level=logging.INFO)
             MinuteBarStream.stream.subscribe_bars(
                 MinuteBarStream.handleBar, '*')
 
             MinuteBarStream.stream.run()
             MinuteBarStream.run_connection(MinuteBarStream.stream)
         except Exception as e:
-            print(f'Exception from websocket connection: {e}')
+            logging.warning(
+                f'Exception from websocket connection (start): {e}')
+
+    @staticmethod
+    def run():
+        logging.info('MinuteBarStream.run()')
+        MinuteBarStream.init()
+        MinuteBarStream.start()
 
 
 if __name__ == "__main__":
-    MinuteBarStream.init()
     MinuteBarStream.run()

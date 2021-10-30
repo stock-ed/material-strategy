@@ -1,7 +1,8 @@
-from pubsubKeys import PUBSUB_KEYS
-from redisPubsub import RedisPublisher, RedisSubscriber
 import sys
 import json
+import logging
+from pubsubKeys import PUBSUB_KEYS
+from redisPubsub import RedisPublisher, RedisSubscriber
 
 
 # StudyThreeBarsFilter
@@ -53,7 +54,7 @@ class StudyThreeBarsFilter:
         elif len(prices) > 3 and StudyThreeBarsFilter._isFirstTwoBars(prices[0][1], prices[2][1], prices[3][1]):
             return True, StudyThreeBarsFilter.barCandidate(prices[0][1], prices[2][1], timeframe, prices[0][0], 'ADD')
         else:
-            return False, {0, 0, timeframe, prices[0][0], 'DEL'}
+            return False, StudyThreeBarsFilter.barCandidate(0, 0, timeframe, prices[0][0], 'DEL')
         # else:
         #     return {'symbol': symbol, 'value': {
         #         'firstPrice': 14.00,
@@ -77,13 +78,24 @@ class StudyThreeBarsCandidates:
     def __init__(self):
         # StoreStack: class to access the redis Stack.
         self.publisher = RedisPublisher(PUBSUB_KEYS.EVENT_BAR_STACK_ADD)
+        self.subscriber = RedisSubscriber(
+            PUBSUB_KEYS.EVENT_BAR_CANDIDATE_CHECK, None, self.filterCheck)
 
     # return all symbols stored in the Stack (not used)
     def getStacks(self):
         self.stack.getAll()
 
-    def run(self, data):
+    def getPriceData(self, data):
+        result = []
+        for item in data:
+            item = (item['t'], item['c'])
+            result.append(item)
+        return result
+
+    def filterCheck(self, data):
         try:
+            logging.info(
+                f'EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck - {data}')
             symbol = data['symbol']
             timeframe = data['period']
             prices = self.getPriceData(data['data'])
@@ -93,14 +105,23 @@ class StudyThreeBarsCandidates:
             self.publisher.publish(data)
             print('done')
         except Exception as e:
-            print('run: ', e)
+            logging.warning(
+                f'Error EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck - {e}')
 
-    def getPriceData(self, data):
-        result = []
-        for item in data:
-            item = (item['t'], item['c'])
-            result.append(item)
-        return result
+    def start(self):
+        try:
+            self.subscriber.start()
+        except KeyboardInterrupt:
+            self.subscriber.stop()
+        except Exception as e:
+            logging.warning(
+                f'Error EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.start - {e}')
+
+    @staticmethod
+    def run():
+        logging.info('EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.run')
+        app = StudyThreeBarsCandidates()
+        app.start()
 
 
 if __name__ == "__main__":
@@ -121,9 +142,4 @@ if __name__ == "__main__":
                         "h": 10.8, "l": 10.05, "v": 2000.0}
                 ]}
         app = StudyThreeBarsCandidates()
-        app.run(data)
-    else:
-        candidate = StudyThreeBarsCandidates()
-        app = RedisSubscriber(
-            PUBSUB_KEYS.EVENT_BAR_CANDIDATE_CHECK, None, candidate.run)
-        app.start()
+        app.start(data)

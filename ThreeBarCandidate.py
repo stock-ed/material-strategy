@@ -169,6 +169,6 @@ app: StudyThreeBarsCandidates = None
 
 if __name__ == "__main__":
     candidate = StudyThreeBarsCandidates()
-    app = redisSubscriber = RedisSubscriber(
+    app = RedisSubscriber(
         ['EVENT_BAR_CANDIDATE_CHECK'], None, candidate.CheckCandidate)
     app.start()
