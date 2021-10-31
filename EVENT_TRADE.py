@@ -30,7 +30,7 @@ from pubsubKeys import PUBSUB_KEYS
 #
 
 
-def init():
+def init() -> None:
     try:
         # make sure we have an event loop, if not create a new one
         loop = asyncio.get_event_loop()
@@ -54,7 +54,7 @@ def init():
 # Handle real time trade data.  Process the pricing data with three bar studies.
 # It scores the stock with the three bar studies.
 #
-async def _handleTrade(trade):
+async def handleTrade(trade) -> None:
     # try:
     #     # make sure we have an event loop, if not create a new one
     #     loop = asyncio.get_event_loop()
@@ -63,11 +63,11 @@ async def _handleTrade(trade):
     #     asyncio.set_event_loop(asyncio.new_event_loop())
     data = {'symbol': trade['S'],
             'close': trade['p'], 'volume': trade['s']}
-    print('TRADE: ', data)
-    publisher.publish(data)
+    print('TRADE: ', trade)
+    publisher.publish(trade)
 
 
-def subscription(data, isTestOnly=False):
+def subscription(data, isTestOnly: bool = False) -> None:
     try:
         logging.info(f'EVENT-TRADE.subscription start - {data}')
         symbol = data['symbol']
@@ -75,7 +75,7 @@ def subscription(data, isTestOnly=False):
         if (op == 'SUBSCRIBE'):
             print('subscribe to: ', symbol)
             if not isTestOnly:
-                conn.subscribe_trades(_handleTrade, symbol)
+                conn.subscribe_trades(handleTrade, symbol)
         else:
             print('unsubscribe to: ', symbol)
             if not isTestOnly:
@@ -84,7 +84,7 @@ def subscription(data, isTestOnly=False):
         logging.warning(f'EVENT-TRADE.subscription exception - {e}')
 
 
-def subscribeToTrade(data):
+def subscribeToTrade(data) -> None:
     logging.info(f'EVENT-TRADE.subscribeToTrade start - {data}')
     try:
         if (conn == None):

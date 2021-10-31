@@ -5,7 +5,7 @@ from datetime import datetime
 import time
 from redisHash import ActiveBars
 from redisTimeseriesData import RealTimeBars
-from redisTimeseriesTable import TimeseriesTable
+from RedisTimeseriesTable import TimeseriesTable
 from redis3barScore import StudyThreeBarsScore
 from redisPubsub import RedisPublisher
 from pubsubKeys import PUBSUB_KEYS

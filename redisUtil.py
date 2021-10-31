@@ -213,22 +213,6 @@ class KeyName:
     # UPDATED BARS
     VARIABLE_ACTIVE_BARS = "ACTIVE_BARS"    # active bar
 
-    # Time Series Key for each symbol, data type and timeframe
-
-    @staticmethod
-    def KeyBar(symbol, datatype, timeframe):
-        return "RTS_BAR_" + datatype.upper() + "_" + timeframe + ":" + symbol.upper()
-
-    # Sorted Set key for Dashboard for quick lookup
-    @staticmethod
-    def KeyDashboard():
-        return "RSS_DAASHBOARD"
-
-    # Hashed key for scores.  Historical data.  24 hours.
-    @staticmethod
-    def KeyScore(symbol):
-        return "RTS_SCORE:" + symbol.upper()
-
 
 #
 # {'close': 136.02,
@@ -258,16 +242,36 @@ class DictObj:
 class TimeStamp:
 
     @staticmethod
+    def retention_in_sec(timeframe) -> int:
+        second = 1
+        minute = 60 * second
+        hour = 60 * minute
+        switcher = {
+            RedisTimeFrame.REALTIME: 1 * minute,
+            RedisTimeFrame.SEC10: 20 * minute,
+            RedisTimeFrame.MIN1: 20 * minute,
+            RedisTimeFrame.MIN2: 40 * minute,
+            RedisTimeFrame.MIN5: 2 * hour
+        }
+        dt = switcher.get(timeframe)
+        return dt
+
+    @staticmethod
     def get_starttime(timeframe):
         # second = RetentionTime.SECOND
+        retensionHalf = TimeStamp.retention_in_sec(timeframe) / 2
+        return TimeStamp.now() - retensionHalf
+
+    @staticmethod
+    def getStartTime(timeframe):
         second = 1
         minute = 60 * second
         hour = 60 * minute
         now_ms = TimeStamp.now()
         switcher = {
             RedisTimeFrame.REALTIME: now_ms - (second * 30),
-            RedisTimeFrame.SEC10: now_ms - (minute * 5),
-            RedisTimeFrame.MIN1: now_ms - (minute * 5),
+            RedisTimeFrame.SEC10: now_ms - (minute * 10),
+            RedisTimeFrame.MIN1: now_ms - (minute * 10),
             RedisTimeFrame.MIN2: now_ms - (minute * 20),
             RedisTimeFrame.MIN5: now_ms - (hour),
             RedisTimeFrame.MIN30: now_ms - (hour * 4),
@@ -294,19 +298,25 @@ class TimeStamp:
         return DictObj(ts)
 
     @staticmethod
-    def retention_in_ms(timeframe):
+    def retentionInMs(timeframe):
         second = 1000
         minute = 60000
         hour = 360000
         switcher = {
-            RedisTimeFrame.REALTIME: 5 * minute,
-            RedisTimeFrame.SEC10: 30 * minute,
-            RedisTimeFrame.MIN1: 30 * minute,
-            RedisTimeFrame.MIN2: 30 * minute,
-            RedisTimeFrame.MIN5: 4 * hour
+            RedisTimeFrame.REALTIME: 1 * minute,
+            RedisTimeFrame.SEC10: 20 * minute,
+            RedisTimeFrame.MIN1: 20 * minute,
+            RedisTimeFrame.MIN2: 40 * minute,
+            RedisTimeFrame.MIN5: 2 * hour
         }
         dt = switcher.get(timeframe)
         return dt
+
+    @staticmethod
+    def retention_in_ms(timeframe):
+        second = 1000
+        ms = TimeStamp.retention_in_sec(timeframe) * second
+        return ms
 
     @staticmethod
     def now():
@@ -332,27 +342,6 @@ class SetInterval:
 
     def cancel(self):
         self.stopEvent.set()
-
-
-class MarketData:
-    def __init__(self, api, redisCore: redis):
-        self.api = api
-        self.redisCore = redisCore
-
-    def _getTicks(timeframe):
-        return 365
-
-    def _download(self, symbol, timeframe):
-        barset = self.api.get_barset(
-            symbol, 'day', limit=self._getTicks(timeframe))
-        stock_bars = barset[symbol]
-        return stock_bars
-
-    def _key(self, symbol, oneDate):
-        return "D" + oneDate.strftime("%y%m%d") + ":" + symbol
-
-    def data(self, symbol, timeframe):
-        pass
 
 
 if __name__ == "__main__":

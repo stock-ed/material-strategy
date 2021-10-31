@@ -31,9 +31,9 @@ class MinuteBarStream:
         try:
             conn.run()
         except Exception as e:
-            print(f'Exception from websocket connection: {e}')
+            logging.warning(f'Exception from websocket connection: {e}')
         finally:
-            print("Trying to re-establish connection")
+            logging.info("Trying to re-establish connection")
             time.sleep(3)
             MinuteBarStream.run_connection(conn)
 
@@ -43,7 +43,7 @@ class MinuteBarStream:
     # timestamp is not serialzieable, so we need to convert it to a string.
     @staticmethod
     async def handleBar(bar):
-        logging.info('bar: ', bar)
+        # logging.info('bar: ', bar)
         seconds = bar['t'].seconds
         bar['t'] = seconds
         MinuteBarStream.publisher.publish(bar)

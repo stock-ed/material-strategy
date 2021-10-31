@@ -1,7 +1,7 @@
 import logging
 import sys
 from multiprocessing import Process
-from redisTimeseriesTable import TimeseriesTable
+from RedisTimeseriesTable import TimeseriesTable
 from EVENT_BAR import MinuteBarStream
 from EVENT_BAR_CANDIDATE import EventBarCandidate
 from EVENT_BAR_CANDIDATE_CHECK import StudyThreeBarsCandidates

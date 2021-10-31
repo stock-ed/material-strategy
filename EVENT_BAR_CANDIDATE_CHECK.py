@@ -142,4 +142,4 @@ if __name__ == "__main__":
                         "h": 10.8, "l": 10.05, "v": 2000.0}
                 ]}
         app = StudyThreeBarsCandidates()
-        app.start(data)
+        app.filterCheck(data)
