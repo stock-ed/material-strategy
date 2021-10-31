@@ -106,6 +106,9 @@ class TimeseriesTable:
         if self.redis.exists(KeyName.KEY_THREEBARSCORE):
             self.redis.delete(KeyName.KEY_THREEBARSCORE)
 
+    def ClearAll(self):
+        self.redis.flushall()
+
     def checkRedisSymbol(self, rts, symbol, timeframe):
         return self.redis.exists(bar_key(symbol, 'close', timeframe)) or self.redis.exists(bar_key(symbol, 'open', timeframe)) or self.redis.exists(bar_key(symbol, 'high', timeframe)) or self.redis.exists(bar_key(symbol, 'low', timeframe)) or self.redis.exists(bar_key(symbol, 'volume', timeframe))
 

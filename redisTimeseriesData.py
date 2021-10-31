@@ -12,6 +12,7 @@ import time
 from alpacaHistorical import AlpacaHistorical
 import json
 import pandas as pd
+import logging
 
 
 # def bar_key(symbol, suffix, time_frame):
@@ -28,7 +29,7 @@ class ComposeData:
         else:
             return ts1
 
-    def composeStockData(self, stamps: [], data):
+    def composeStockData(self, stamps: list, data):
         result = []
         for ts in stamps:
             isFound = False
@@ -48,13 +49,15 @@ class ComposeData:
     def AdjustBars(self, data, timeframe, ts=time.time()):
         # get timestamp
         switcher = {
+            RedisTimeFrame.SEC10: 10,
             RedisTimeFrame.MIN1: 60,
             RedisTimeFrame.MIN2: 120,
             RedisTimeFrame.MIN5: 300,
         }
         mins = switcher.get(timeframe, 60)
         tstamps = []
-        ts1 = self.firstTimestamp(ts, data[0][0], mins)
+        # ts1 = self.firstTimestamp(ts, data[0][0], mins)
+        ts1 = data[0][0]
         tstamps.append(ts1 - mins * 4)
         tstamps.append(ts1 - mins * 3)
         tstamps.append(ts1 - mins * 2)
@@ -62,6 +65,11 @@ class ComposeData:
         tstamps.append(ts1)
         result = self.composeStockData(tstamps, data)
         # reverse result array
+        if len(result) > 1:
+            revResult = []
+            for idx in range(len(result) - 1, -1, -1):
+                revResult.append(result[idx])
+            return revResult
         return result
 
 
@@ -124,7 +132,7 @@ class RealTimeBars:
             self.rts.add(bar_key(symbol, "open", timeframe), ts, data['o'])
             self.rts.add(bar_key(symbol, "volume", timeframe), ts, data['v'])
         except Exception as e:
-            print('RedisAddBar:', e)
+            logging.info(f'RedisAddBar: {e}')
             return None
 
     def _bar_realtime(self, rts, datatype, symbol, timeframe, startt, endt):
@@ -133,17 +141,21 @@ class RealTimeBars:
             close_prices = rts.revrange(key, from_time=startt, to_time=endt)
             return close_prices
         except Exception as e:
-            print('_bar_realtime: ' + symbol + " - ", e)
+            logging.warning(f'_bar_realtime: {symbol} - {e}')
             return None
 
-    def _bar_readtime_adjust(self, rts, datatype, symbol, timeframe, startt, endt):
-        data = self._bar_realtime(
-            rts, datatype, symbol, timeframe, startt, endt)
-        if data == [] or data is None:
+    def _bar_realtime_adjust(self, rts, datatype, symbol, timeframe, startt, endt):
+        try:
+            data = self._bar_realtime(
+                rts, datatype, symbol, timeframe, startt, endt)
+            if data == [] or data is None:
+                return []
+            composeData = ComposeData()
+            result = composeData.AdjustBars(data, timeframe)
+            return result
+        except Exception as e:
+            logging.warning(f'_bar_realtime_adjust: {symbol} - {e}')
             return []
-        composeData = ComposeData()
-        result = composeData.AdjustBars(data, timeframe)
-        return result
         # if len(result) > 1:
         #     revResult = []
         #     for idx in range(len(result) - 1, -1, -1):
@@ -153,53 +165,129 @@ class RealTimeBars:
         #     return result
 
     def _bar_historical(self, symbol, timeframe, datatype, startt, endt):
-        historical = AlpacaHistorical()
-        result = historical.HistoricalPrices(
-            symbol, timeframe, datatype, startt, endt)
-        return result
+        try:
+            historical = AlpacaHistorical()
+            result = historical.HistoricalPrices(
+                symbol, timeframe, datatype, startt, endt)
+            return result
+        except Exception as e:
+            logging.warning(f'_bar_historical: {symbol} - {e}')
+            return []
 
-    def mergeRealtimeData(self, symbol, close, open, high, low, volume):
+    def mergeRealtimeData(self, close, open, high, low, volume):
         result = []
         for ix in range(len(close)):
             item = {
                 "t": close[ix][0],
                 "c": close[ix][1],
-                'o': open[ix][1],
-                'h': high[ix][1],
-                'l': low[ix][1],
+                'o': 0 if open == [] else open[ix][1],
+                'h': 0 if high == [] else high[ix][1],
+                'l': 0 if low == [] else low[ix][1],
                 'v': volume[ix][1]
             }
             result.append(item)
         return result
 
-    def RedisGetRealtimeData(self, datatype, symbol, timeframe):
-        switcher = {
-            RedisTimeFrame.REALTIME: self._bar_realtime,
-            RedisTimeFrame.MIN1:  self._bar_readtime_adjust,
-            RedisTimeFrame.MIN2:  self._bar_readtime_adjust,
-            RedisTimeFrame.MIN5:  self._bar_readtime_adjust,
-            RedisTimeFrame.DAILY: self._bar_historical
-        }
-        callMethod = switcher.get(timeframe)
-        ts = TimeStamp()
-        startt = ts.get_starttime(timeframe)
-        endt = ts.get_endtime(timeframe)
-        close = callMethod(self.rts, 'close', symbol, timeframe, startt, endt)
-        if close is None or len(close) < 5:
+    def realtimeDataSeconds(self, rts, symbol: str, timeframe: str, startt: int, endt: int) -> list:
+        try:
+            close = self._bar_realtime(
+                self.rts, "close", symbol, timeframe, startt, endt)
+            open = []
+            high = []
+            low = []
+            volume = self._bar_realtime(
+                self.rts, "volume", symbol, timeframe, startt, endt)
+            result = self.mergeRealtimeData(
+                close, open, high, low, volume)
+            return result
+        except Exception as e:
+            logging.warning(f'realtimeDataSeconds: {symbol} - {e}')
+            return []
+
+    def realtimeDataMinutes(self, rts, symbol: str, timeframe: str, startt: int, endt: int) -> list:
+        try:
+            close = self._bar_realtime(
+                rts, "close", symbol, timeframe, startt, endt)
+            open = self._bar_realtime(
+                rts, "open", symbol, timeframe, startt, endt)
+            high = self._bar_realtime(
+                rts, "high", symbol, timeframe, startt, endt)
+            low = self._bar_realtime(
+                rts, "low", symbol, timeframe, startt, endt)
+            volume = self._bar_realtime(
+                rts, "volume", symbol, timeframe, startt, endt)
+            result = self.mergeRealtimeData(
+                close, open, high, low, volume)
+            return result
+        except Exception as e:
+            logging.warning(f'Error realtimeDataMinutes: {symbol} - {e}')
+            return []
+
+    def realtimeDataHistorical(self, rts, symbol: str, timeframe: str, startt: int, endt: int) -> list:
+        try:
+            ts = TimeStamp()
             data = self._bar_historical(
                 symbol, timeframe, None, ts.DatetimeString(startt), ts.DatetimeString(endt))
-            return RealTimeBars.TimeseriesRealtimeDataFormat("threebars", symbol, timeframe, data)
-        else:
-            open = callMethod(self.rts, 'open', symbol,
-                              timeframe, startt, endt)
-            high = callMethod(self.rts, 'high', symbol,
-                              timeframe, startt, endt)
-            low = callMethod(self.rts, 'low', symbol, timeframe, startt, endt)
-            volume = callMethod(self.rts, 'volume', symbol,
-                                timeframe, startt, endt)
-            data = self.mergeRealtimeData(
-                symbol, close, open, high, low, volume)
-            return RealTimeBars.TimeseriesRealtimeDataFormat("threebars", symbol, timeframe, data)
+            return data
+            # return RealTimeBars.TimeseriesRealtimeDataFormat("threebars", symbol, timeframe, data)
+        except Exception as e:
+            logging.warning(f'Error realtimeDataHistorical: {symbol} - {e}')
+            return []
+
+    def realtimeDataMinutesComplete(self, rts, symbol: str, timeframe: str, startt: int, endt: int) -> list:
+        data = self.realtimeDataMinutes(rts, symbol, timeframe, startt, endt)
+        if data is None or data == [] or len(data) < 5:
+            historical = self.realtimeDataHistorical(
+                rts, symbol, timeframe, startt, endt)
+            return historical
+        return data
+
+    def RedisGetRealtimeData(self, datatype, symbol, timeframe):
+        try:
+            switcher = {
+                RedisTimeFrame.REALTIME: self.realtimeDataSeconds,
+                RedisTimeFrame.MIN1:  self.realtimeDataMinuteComplete,
+                RedisTimeFrame.MIN2:  self.realtimeDataMinuteComplete,
+                RedisTimeFrame.MIN5:  self.realtimeDataMinuteComplete,
+                RedisTimeFrame.DAILY: self.realtimeDataHistorical
+            }
+            callMethod = switcher.get(timeframe)
+            ts = TimeStamp()
+            startt = ts.get_starttime(timeframe)
+            endt = ts.get_endtime(timeframe)
+            data = callMethod(self.rts, symbol, timeframe, startt, endt)
+            return data
+        except Exception as e:
+            logging.warning(f'RedisGetRealtimeData: {symbol} - {e}')
+            return []
+            # close = callMethod(self.rts, 'close', symbol,
+            #                    timeframe, startt, endt)
+            # if timeframe == RedisTimeFrame.DAILY:
+            #     return close
+            # if timeframe == RedisTimeFrame.REALTIME:
+            #     volume = callMethod(self.rts, 'volume', symbol,
+            #                         timeframe, startt, endt)
+            #     data = self.mergeRealtimeData(
+            #         symbol, close, [], [], [], volume)
+            #     return close
+            # if close is None or len(close) < 5:
+            #     data = self._bar_historical(
+            #         symbol, timeframe, None, ts.DatetimeString(startt), ts.DatetimeString(endt))
+            #     return RealTimeBars.TimeseriesRealtimeDataFormat("threebars", symbol, timeframe, data)
+            # elif timeframe in (RedisTimeFrame.MIN1, RedisTimeFrame.MIN2, RedisTimeFrame.MIN5):
+            #     open = callMethod(self.rts, 'open', symbol,
+            #                       timeframe, startt, endt)
+            #     high = callMethod(self.rts, 'high', symbol,
+            #                       timeframe, startt, endt)
+            #     low = callMethod(self.rts, 'low', symbol,
+            #                      timeframe, startt, endt)
+            #     volume = callMethod(self.rts, 'volume', symbol,
+            #                         timeframe, startt, endt)
+            #     data = self.mergeRealtimeData(
+            #         symbol, close, open, high, low, volume)
+            #     return RealTimeBars.TimeseriesRealtimeDataFormat("threebars", symbol, timeframe, data)
+            # else:
+            #     return close
 
     def _get_active_stocks(self, rts, assets):
         # remove all active stocks
