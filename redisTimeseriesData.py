@@ -246,9 +246,9 @@ class RealTimeBars:
         try:
             switcher = {
                 RedisTimeFrame.REALTIME: self.realtimeDataSeconds,
-                RedisTimeFrame.MIN1:  self.realtimeDataMinuteComplete,
-                RedisTimeFrame.MIN2:  self.realtimeDataMinuteComplete,
-                RedisTimeFrame.MIN5:  self.realtimeDataMinuteComplete,
+                RedisTimeFrame.MIN1:  self.realtimeDataMinutesComplete,
+                RedisTimeFrame.MIN2:  self.realtimeDataMinutesComplete,
+                RedisTimeFrame.MIN5:  self.realtimeDataMinutesComplete,
                 RedisTimeFrame.DAILY: self.realtimeDataHistorical
             }
             callMethod = switcher.get(timeframe)
