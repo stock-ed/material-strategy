@@ -1,25 +1,26 @@
 import logging
 import sys
+import time
 from multiprocessing import Process
 from RedisTimeseriesTable import TimeseriesTable
-from EVENT_BAR import MinuteBarStream
 from EVENT_BAR_CANDIDATE import EventBarCandidate
 from EVENT_BAR_CANDIDATE_CHECK import StudyThreeBarsCandidates
 from EVENT_BAR_STACK_ADD import RedisStack
 from EVENT_BAR_TRADE_ADD import RedisTradeSubscription
-from EVENT_TRADE import StreamTradeRun
 from EVENT_TRADE_NEW import TradeNewStock
 from EVENT_TRADE_SAVE import EventTradeSave
 from EVENT_TRADE_PROCESS import EventTradeScoreProcess
 from EVENT_TRADE_SCORE import EventTradeScore
+from EVENT_REALTIME_DATA import RealTimeData
 
 
 def main(isCreateTable=True):
     if (isCreateTable):
         tables = TimeseriesTable()
         tables.run()
-    p01 = Process(target=MinuteBarStream.run)
+    p01 = Process(target=RealTimeData)
     p01.start()
+    time.sleep(5)  # give the initial connection time to be established
     p02 = Process(target=EventBarCandidate.run)
     p02.start()
     p03 = Process(target=StudyThreeBarsCandidates.run)
@@ -28,8 +29,6 @@ def main(isCreateTable=True):
     p04.start()
     p05 = Process(target=RedisTradeSubscription.run)
     p05.start()
-    p06 = Process(target=StreamTradeRun)
-    p06.start()
     p07 = Process(target=TradeNewStock.run)
     p07.start()
     p08 = Process(target=EventTradeSave.run)

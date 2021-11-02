@@ -32,9 +32,9 @@ class RedisStack:
         return store
 
     def addStock(self, data):
-        logging.info(f"EVENT-BAR-STACK-ADD: start - {data}")
         try:
             symbol = data['symbol']
+            logging.info(f"EVENT-BAR-STACK-ADD: start - {symbol}")
             store = [] if self.stack.value(
                 symbol) is None else self.stack.value(symbol)
             if data['action']["operation"] == 'ADD':
@@ -54,9 +54,9 @@ class RedisStack:
                     # store = self.popField(store, data['type'], data['period'])
                     self.stack.delete(symbol)
             else:
-                logging.warning("Error: Unknown operation")
+                logging.warning(f"Error: Unknown operation {data}")
         except Exception as e:
-            logging.error(f"EVENT-BAR-STACK-ADD: start {e}")
+            logging.error(f"EVENT-BAR-STACK-ADD: start {e} {data}")
 
     def start(self):
         try:

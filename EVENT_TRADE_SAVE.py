@@ -14,10 +14,11 @@ class EventTradeSave:
 
     def addStock(self, data):
         try:
-            logging.info(f"EVENT_TRADE_SAVE.addStock: {data}")
+            symbol = data['symbol']
+            logging.info(f"EVENT_TRADE_SAVE.addStock: {symbol}")
             self.rtb.RedisAddTrade(data)
         except Exception as e:
-            logging.warning(f"Error EVENT_TRADE_SAVE.addStock: {e}")
+            logging.warning(f"Error EVENT_TRADE_SAVE.addStock: {e} {data} ")
 
     def start(self):
         try:

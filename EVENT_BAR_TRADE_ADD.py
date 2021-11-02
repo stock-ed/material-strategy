@@ -14,9 +14,10 @@ class RedisTradeSubscription:
             PUBSUB_KEYS.EVENT_BAR_TRADE_ADD, None, self.addStock)
 
     def addStock(self, data):
-        logging.info(f"EVENT_TRADE_ADD.RedisTradeSubscription.start: {data}")
         try:
             symbol = data['symbol']
+            logging.info(
+                f"EVENT_TRADE_ADD.RedisTradeSubscription.start: {symbol}")
             if not self.subscription.isSymbolExist(symbol) and data['action']['operation'] == "ADD":
                 self.subscription.set(symbol)
                 data = {"symbol": symbol,
@@ -24,8 +25,7 @@ class RedisTradeSubscription:
                 self.publisher.publish(data)
         except Exception as e:
             logging.error(
-                f"Error EVENT_TRADE_ADD.RedisTradeSubscription.start: {e}")
-            sys.exit(1)
+                f"Error EVENT_TRADE_ADD.RedisTradeSubscription.start: {e} {data} ")
 
     def start(self):
         try:

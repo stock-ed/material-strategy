@@ -95,9 +95,9 @@ class StudyThreeBarsCandidates:
 
     def filterCheck(self, data):
         try:
-            logging.info(
-                f'EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck - {data}')
             symbol = data['symbol']
+            logging.info(
+                f'EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck {symbol}')
             timeframe = data['period']
             prices = self.getPriceData(data['data'])
             _, result = StudyThreeBarsFilter.potentialList(
@@ -108,7 +108,7 @@ class StudyThreeBarsCandidates:
             print('done')
         except Exception as e:
             logging.warning(
-                f'Error EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck - {e}')
+                f'Error EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck - {data} {e}')
 
     def start(self):
         try:

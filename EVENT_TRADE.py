@@ -30,6 +30,13 @@ from pubsubKeys import PUBSUB_KEYS
 #
 
 
+async def handleBar(bar):
+    # MinuteBarStream.rtb.RedisAddBar(bar)
+    seconds = bar['t'].seconds
+    bar['t'] = seconds
+    print(bar)
+
+
 def init() -> None:
     try:
         # make sure we have an event loop, if not create a new one
@@ -48,6 +55,8 @@ def init() -> None:
     subscriber.start()
     global publisher
     publisher = RedisPublisher(PUBSUB_KEYS.EVENT_TRADE_NEW)
+    # for debug only
+    conn.subscribe_bars(handleBar, '*')
 
 
 # PUBLISH RPS_THREEBARSTACK_NEW "{ 'data': { 'subscribe' : '[AAPL, GOOG]', 'unsubscribe': '[]' }}"
@@ -63,7 +72,8 @@ async def handleTrade(trade) -> None:
     #     asyncio.set_event_loop(asyncio.new_event_loop())
     data = {'symbol': trade['S'],
             'close': trade['p'], 'volume': trade['s']}
-    publisher.publish(trade)
+    print(data)
+    # publisher.publish(trade)
 
 
 def subscription(data, isTestOnly: bool = False) -> None:
@@ -111,24 +121,39 @@ def StreamTradeRun():
     loop = asyncio.get_event_loop()
     time.sleep(5)  # give the initial connection time to be established
 
-    # subs = ['AAPL', 'FB']
-    # unsubs = []
-    # data = {'subscribe': subs, 'unsubscribe': unsubs}
-    # publisher.publish(data)
+    asyncio.run(sleepCall())
+
     app = RedisSubscriber(
         PUBSUB_KEYS.EVENT_TRADE_SUBSCRIBE, None, subscribeToTrade)
     app.start()
 
     print('RUNNING...')
+
+    # ------------------------------------------------
+    # subs = ['AAPL', 'FB']
+    # unsubs = []
+    # data = {'subscribe': subs, 'unsubscribe': unsubs}
+    # publisher.publish(data)
+
     # while 1:
     #     pass
 
 
+async def sleepCall():
+    print(' sleepCall() --------------------------- ')
+    await asyncio.sleep(5)
+    data1 = {'symbol': 'AAPL', 'operation': 'SUBSCRIBE'}
+    subscribeToTrade(data1)
+    data2 = {'symbol': 'FB', 'operation': 'SUBSCRIBE'}
+    subscribeToTrade(data2)
+
+
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
-        data = {"symbol": "FANG",
-                "operation": "SUBSCRIBE"}
-        subscription(data, True)
-    else:
-        StreamTradeRun()
+    # args = sys.argv[1:]
+    # if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
+    #     data = {"symbol": "FANG",
+    #             "operation": "SUBSCRIBE"}
+    #     subscription(data, True)
+    # else:
+    #     StreamTradeRun()
+    StreamTradeRun()
