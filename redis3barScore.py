@@ -18,13 +18,12 @@ class StudyThreeBarsScore:
 
     # two scoring.  This one tests for basic accpetable trade.
     def _isPriceRangeOptimal(self, newPrice, price1, price2):
-        return (newPrice < price2 and newPrice > price1)
+        return (newPrice < price2 and newPrice >= price1)
 
     # two scoring.  This one tests for optimal trade pattern.
     def _isPriceRangeUsable(self, newPrice, price1, price2):
-        priceChange = price2 - price1
-        priceTop = price2 + (priceChange / 2)
-        if (newPrice >= price2 and newPrice < priceTop):
+        priceChange = (price2 - price1) / 2
+        if (newPrice < (price2 + priceChange) and newPrice > (price1 - priceChange)):
             return True
         return False
 
@@ -41,7 +40,7 @@ class StudyThreeBarsScore:
         price2 = stackValue['secondPrice']
         if (self._isPriceRangeOptimal(newPrice, price1, price2)):
             point = 4
-        if (self._isPriceRangeUsable(newPrice, price1, price2)):
+        elif (self._isPriceRangeUsable(newPrice, price1, price2)):
             point = 2
         return point
 
@@ -56,7 +55,6 @@ class StudyThreeBarsScore:
         study = StoreScore(symbol)
         newPrice = data['close']
         newVolume = data['volume']
-        self.rtb.RedisAddTrade(data)
         realtime = getRealTimeData(
             None, symbol, RedisTimeFrame.REALTIME)
         stack = getStackData(symbol)

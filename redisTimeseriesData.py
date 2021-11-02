@@ -142,7 +142,7 @@ class RealTimeBars:
             return close_prices
         except Exception as e:
             logging.warning(f'_bar_realtime: {symbol} - {e}')
-            return None
+            return []
 
     def _bar_realtime_adjust(self, rts, datatype, symbol, timeframe, startt, endt):
         try:
@@ -163,6 +163,33 @@ class RealTimeBars:
         #     return revResult
         # else:
         #     return result
+
+    # {
+    #     "bars": [
+    #         {
+    #             "t": "2021-11-01T08:25:00Z",
+    #             "o": 332.9,
+    #             "h": 332.9,
+    #             "l": 332.9,
+    #             "c": 332.9,
+    #             "v": 694,
+    #             "n": 34,
+    #             "vw": 332.988963
+    #         },
+    #         {
+    #             "t": "2021-11-01T08:28:00Z",
+    #             "o": 332.9,
+    #             "h": 332.9,
+    #             "l": 332.9,
+    #             "c": 332.9,
+    #             "v": 419,
+    #             "n": 16,
+    #             "vw": 332.934129
+    #         }
+    #     ],
+    #     "symbol": "MSFT",
+    #     "next_page_token": null
+    # }
 
     def _bar_historical(self, symbol, timeframe, datatype, startt, endt):
         try:
@@ -246,9 +273,9 @@ class RealTimeBars:
         try:
             switcher = {
                 RedisTimeFrame.REALTIME: self.realtimeDataSeconds,
-                RedisTimeFrame.MIN1:  self.realtimeDataMinutesComplete,
-                RedisTimeFrame.MIN2:  self.realtimeDataMinutesComplete,
-                RedisTimeFrame.MIN5:  self.realtimeDataMinutesComplete,
+                RedisTimeFrame.MIN1:  self.realtimeDataMinutes,
+                RedisTimeFrame.MIN2:  self.realtimeDataMinutes,
+                RedisTimeFrame.MIN5:  self.realtimeDataMinutes,
                 RedisTimeFrame.DAILY: self.realtimeDataHistorical
             }
             callMethod = switcher.get(timeframe)
@@ -256,7 +283,7 @@ class RealTimeBars:
             startt = ts.get_starttime(timeframe)
             endt = ts.get_endtime(timeframe)
             data = callMethod(self.rts, symbol, timeframe, startt, endt)
-            return data
+            return RealTimeBars.TimeseriesRealtimeDataFormat("threebars", symbol, timeframe, data)
         except Exception as e:
             logging.warning(f'RedisGetRealtimeData: {symbol} - {e}')
             return []

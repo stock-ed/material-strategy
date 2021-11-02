@@ -39,9 +39,10 @@ class RedisTradeSubscription:
     def run():
         logging.info("EVENT_TRADE_ADD.RedisTradeSubscription.run")
         candidate = RedisTradeSubscription()
-        app = RedisSubscriber(
-            PUBSUB_KEYS.EVENT_BAR_TRADE_ADD, None, candidate.start)
-        app.start()
+        candidate.start()
+        # app = RedisSubscriber(
+        #     PUBSUB_KEYS.EVENT_BAR_TRADE_ADD, None, candidate.start)
+        # app.start()
 
 
 if __name__ == "__main__":

@@ -47,7 +47,7 @@ def init() -> None:
         PUBSUB_KEYS.EVENT_TRADE_SUBSCRIBE, None, callback=subscribeToTrade)
     subscriber.start()
     global publisher
-    publisher = RedisPublisher(['EVENT_TRADE'])
+    publisher = RedisPublisher(PUBSUB_KEYS.EVENT_TRADE_NEW)
 
 
 # PUBLISH RPS_THREEBARSTACK_NEW "{ 'data': { 'subscribe' : '[AAPL, GOOG]', 'unsubscribe': '[]' }}"
@@ -63,21 +63,20 @@ async def handleTrade(trade) -> None:
     #     asyncio.set_event_loop(asyncio.new_event_loop())
     data = {'symbol': trade['S'],
             'close': trade['p'], 'volume': trade['s']}
-    print('TRADE: ', trade)
     publisher.publish(trade)
 
 
 def subscription(data, isTestOnly: bool = False) -> None:
     try:
-        logging.info(f'EVENT-TRADE.subscription start - {data}')
+        logging.info(f'EVENT-TRADE.subscription started')
         symbol = data['symbol']
         op = data['operation']
         if (op == 'SUBSCRIBE'):
-            print('subscribe to: ', symbol)
+            logging.info(f'subscribe to: {symbol}')
             if not isTestOnly:
                 conn.subscribe_trades(handleTrade, symbol)
         else:
-            print('unsubscribe to: ', symbol)
+            logging.info('unsubscribe to: {symbol}')
             if not isTestOnly:
                 conn.unsubscribe_trades(symbol)
     except Exception as e:

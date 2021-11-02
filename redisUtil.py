@@ -260,7 +260,7 @@ class TimeStamp:
     def get_starttime(timeframe):
         # second = RetentionTime.SECOND
         retensionHalf = TimeStamp.retention_in_sec(timeframe) / 2
-        return TimeStamp.now() - retensionHalf
+        return TimeStamp.now() - int(retensionHalf)
 
     @staticmethod
     def getStartTime(timeframe):

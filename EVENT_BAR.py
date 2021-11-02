@@ -8,14 +8,17 @@ import alpaca_trade_api as alpaca
 from alpaca_trade_api.stream import Stream
 from pubsubKeys import PUBSUB_KEYS
 import json
+from redisTimeseriesData import RealTimeBars
 
 
 class MinuteBarStream:
     publisher: RedisPublisher = None
     stream: Stream = None
+    isLongOnly: bool = False
+    rtb: RealTimeBars = None
 
     @staticmethod
-    def init(conn: Stream = None):
+    def init(conn: Stream = None, logOnly: bool = False):
         try:
             MinuteBarStream.publisher = RedisPublisher(
                 PUBSUB_KEYS.EVENT_BAR_CANDIDATE)
@@ -23,6 +26,8 @@ class MinuteBarStream:
                 MinuteBarStream.stream = AlpacaStreamAccess.connection()
             else:
                 MinuteBarStream.stream = conn
+            MinuteBarStream.rtb = RealTimeBars()
+            MinuteBarStream.isLongOnly = logOnly
         except Exception as e:
             logging.warning(f'Exception from websocket connection (init): {e}')
 
@@ -43,10 +48,12 @@ class MinuteBarStream:
     # timestamp is not serialzieable, so we need to convert it to a string.
     @staticmethod
     async def handleBar(bar):
-        # logging.info('bar: ', bar)
+        logging.info(f'bar: {bar}')
+        # MinuteBarStream.rtb.RedisAddBar(bar)
         seconds = bar['t'].seconds
         bar['t'] = seconds
-        MinuteBarStream.publisher.publish(bar)
+        if not MinuteBarStream.isLongOnly:
+            MinuteBarStream.publisher.publish(bar)
 
     @staticmethod
     def start():
@@ -68,4 +75,10 @@ class MinuteBarStream:
 
 
 if __name__ == "__main__":
+    #    MinuteBarStream.run()
+    formatter = '%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s'
+    logging.basicConfig(level=logging.INFO, format=formatter,
+                        datefmt='%d-%b-%y %H:%M:%S', filename="three-bar.log")
+    logging.info("MinuteBarStream Started")
+    MinuteBarStream.init(None, True)
     MinuteBarStream.run()

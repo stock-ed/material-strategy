@@ -78,6 +78,7 @@ class StudyThreeBarsCandidates:
     def __init__(self):
         # StoreStack: class to access the redis Stack.
         self.publisher = RedisPublisher(PUBSUB_KEYS.EVENT_BAR_STACK_ADD)
+        self.publisherTrade = RedisPublisher(PUBSUB_KEYS.EVENT_BAR_TRADE_ADD)
         self.subscriber = RedisSubscriber(
             PUBSUB_KEYS.EVENT_BAR_CANDIDATE_CHECK, None, self.filterCheck)
 
@@ -103,6 +104,7 @@ class StudyThreeBarsCandidates:
                 symbol, prices, timeframe)
             data['action'] = result
             self.publisher.publish(data)
+            self.publisherTrade.publish(data)
             print('done')
         except Exception as e:
             logging.warning(

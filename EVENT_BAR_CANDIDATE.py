@@ -29,22 +29,16 @@ class EventBarCandidate:
         data2 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
         logging.info("EventBarCandidate.publish2Min " + json.dumps(data2))
         arrLen = len(data2['data'])
-        if data2 is not None and arrLen > 4:
+        if data2 is not None and arrLen >= 3:
             self.publisher_check.publish(data2)
         else:
-            data3 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
-            data4 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
-            data5 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
-            data6 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
-            data7 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
-            data8 = self.rtb.RedisGetRealtimeData(None, symbol, timeframe)
             logging.info(
                 f"EventBarCandidate.publish2Min: Not Enough {timeframe} {arrLen}")
 
     def AddBar(self, data=None):
         try:
             logging.info(
-                f"EVENT_BAR_CANDIDATE.EventBarCandidate.AddBar:{data} ")
+                f"EVENT_BAR_CANDIDATE.EventBarCandidate.AddBar: {data} ")
             symbol: str = ''
             if data is None:
                 symbol = 'FANG'
@@ -55,7 +49,7 @@ class EventBarCandidate:
             self.publish2Min(symbol, RedisTimeFrame.MIN5)
         except Exception as e:
             logging.error(
-                f"Error EVENT_BAR_CANDIDATE.EventBarCandidate.AddBar{e}")
+                f"Error EVENT_BAR_CANDIDATE.EventBarCandidate.AddBar {e}")
 
     def start(self):
         try:
