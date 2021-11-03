@@ -81,14 +81,14 @@ class RealTimeBars:
         timeframe = RedisTimeFrame.REALTIME
         ts = TimeStamp.now()
         symbol = data['symbol']
-        bar_list = []
-        bar1 = (bar_key(symbol, "close", timeframe), ts, data['close'])
-        bar2 = (bar_key(symbol, "volume", timeframe), ts, data['volume'])
-        bar_list.append(bar1)
-        bar_list.append(bar2)
-        # for bar in bar_list:
-        #     self.rts.add(bar[0], bar[1], bar[2])
-        self.rts.madd(bar_list)
+        # bar_list = []
+        self.rts.add(bar_key(symbol, "close", timeframe), ts, data['close'])
+        self.rts.add(bar_key(symbol, "volume", timeframe), ts, data['volume'])
+        # bar_list.append(bar1)
+        # bar_list.append(bar2)
+        # # for bar in bar_list:
+        # #     self.rts.add(bar[0], bar[1], bar[2])
+        # self.rts.madd(bar_list)
 
     @staticmethod
     def TimeseriesRealtimeDataFormat(studyType, symbol, timeframe, data):

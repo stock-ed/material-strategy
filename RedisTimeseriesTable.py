@@ -34,6 +34,7 @@ class TimeseriesTable:
 
     def addSymbol(self, rts, symbol, suffix, aggr, index, description, companyName):
         if suffix == 'close' or suffix == 'volume':
+            aggr = 'last' if suffix == 'close' else 'sum'
             name0 = self.addSymbolItem(rts, symbol, suffix, aggr,
                                        index, description, companyName, RedisTimeFrame.REALTIME)
             name10s = self.addSymbolItem(rts, symbol,  suffix, aggr,
