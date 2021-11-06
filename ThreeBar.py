@@ -18,9 +18,9 @@ def main(isCreateTable=True):
     if (isCreateTable):
         tables = TimeseriesTable()
         tables.run()
-    p01 = Process(target=RealTimeData)
-    p01.start()
-    time.sleep(5)  # give the initial connection time to be established
+    # p01 = Process(target=RealTimeData)
+    # p01.start()
+    # time.sleep(5)  # give the initial connection time to be established
     p02 = Process(target=EventBarCandidate.run)
     p02.start()
     p03 = Process(target=StudyThreeBarsCandidates.run)

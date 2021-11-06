@@ -16,6 +16,7 @@ from redistimeseries.client import Client
 
 
 class TimeseriesTable:
+    isAutoAggregate = False
 
     def __init__(self, rts=None):
         self.rts = TimeSeriesAccess.connection(rts)
@@ -23,23 +24,27 @@ class TimeseriesTable:
         api = AlpacaAccess.connection()
         self.assets = api.list_assets(status='active')
 
-    def addSymbolItem(self, rts, symbol, suffix, aggr, index, description, companyName, timeframe):
+    def addSymbolItem(self, rts, symbol, suffix, aggr, index, description, companyName, timeframe, duppolicy=None):
         name0 = bar_key(symbol, suffix, timeframe)
         retention = TimeStamp.retention_in_ms(timeframe)
         labels0 = {'SYMBOL': symbol, 'DESC': 'RELATIVE_STRENGTH_INDEX', 'INDEX': 'DJIA',
                    'TIMEFRAME': timeframe, 'INDICATOR': aggr}
-        rts.create(name0, retention_msecs=retention,
-                   labels=labels0)
+        if duppolicy is not None:
+            rts.create(name0, retention_msecs=retention,
+                       labels=labels0, duplicate_policy=duppolicy)
+        else:
+            rts.create(name0, retention_msecs=retention,
+                       labels=labels0)
         return name0
 
     def addSymbol(self, rts, symbol, suffix, aggr, index, description, companyName):
         if suffix == 'close' or suffix == 'volume':
             aggr = 'last' if suffix == 'close' else 'sum'
             name0 = self.addSymbolItem(rts, symbol, suffix, aggr,
-                                       index, description, companyName, RedisTimeFrame.REALTIME)
+                                       index, description, companyName, RedisTimeFrame.REALTIME, aggr)
             name10s = self.addSymbolItem(rts, symbol,  suffix, aggr,
-                                         index, description, companyName, RedisTimeFrame.SEC10)
-            rts.createrule(name0, name10s, aggr, 10*1000)
+                                         index, description, companyName, RedisTimeFrame.SEC10, aggr)
+            rts.createrule(name0, name10s, aggr, 10*1)
         name1 = self.addSymbolItem(rts, symbol, suffix, aggr,
                                    index, description, companyName, RedisTimeFrame.MIN1)
         name2 = self.addSymbolItem(rts, symbol, suffix, aggr,
@@ -47,8 +52,9 @@ class TimeseriesTable:
         name5 = self.addSymbolItem(rts, symbol, suffix, aggr,
                                    index, description, companyName, RedisTimeFrame.MIN5)
         # rts.createrule(name0, name1, aggr, 60*1000)
-        rts.createrule(name1, name2, aggr, 2*60)
-        rts.createrule(name1, name5, aggr, 5*60)
+        if TimeseriesTable.isAutoAggregate:
+            rts.createrule(name1, name2, aggr, 2*60)
+            rts.createrule(name1, name5, aggr, 5*60)
 
     def addRedisStockSymbol(self, rts, symbol, index, description, companyName):
         self.addSymbol(rts, symbol, "high", "max",

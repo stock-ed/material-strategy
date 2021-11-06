@@ -6,7 +6,7 @@
 
 from alpaca_trade_api.rest import TimeFrame
 from datetime import datetime, timedelta
-from redisUtil import bar_key, TimeStamp, RedisTimeFrame, TimeSeriesAccess, AlpacaAccess
+from redisUtil import bar_key, TimeStamp, RedisTimeFrame, TimeSeriesAccess, GetColumn
 from redistimeseries.client import Client
 import time
 from alpacaHistorical import AlpacaHistorical
@@ -120,19 +120,100 @@ class RealTimeBars:
     #         print('RedisAddBar:', e)
     #         return None
 
+    @staticmethod
+    def getColumn(prefix):
+        switcher = {
+            'open': 'o',
+            'high': 'h',
+            'low': 'l',
+            'close': 'c',
+            'volume': 'v',
+        }
+        return switcher.get(prefix, 'o')
+
+    @staticmethod
+    def lastOne(column):
+        return column[0]
+
+    @staticmethod
+    def firstOne(column):
+        return column[-1]
+
+    @staticmethod
+    def sumOne(column):
+        return sum(column)
+
+    @staticmethod
+    def minOne(column):
+        return min(column)
+
+    @staticmethod
+    def maxOne(column):
+        return max(column)
+
+    @staticmethod
+    def aggregateOperation(prefix):
+        switcher = {
+            "close": RealTimeBars.lastOne,
+            "open": RealTimeBars.firstOne,
+            "low": RealTimeBars.minOne,
+            "high": RealTimeBars.maxOne,
+            "volume": RealTimeBars.sumOne
+        }
+        return switcher.get(prefix, RealTimeBars.lastOne)
+
+    def BarAggregate(self, symbol, prefix, ts, timeframe, startt, endt):
+        data = self.rts.revrange(
+            bar_key(symbol, prefix, RedisTimeFrame.MIN1), from_time=startt, to_time=endt)
+        if len(data) > 0:
+            callback = RealTimeBars.aggregateOperation(prefix)
+            colume = [row[1] for row in data]
+            self.rts.add(bar_key(symbol, prefix, timeframe),
+                         ts, callback(colume))
+
+    @staticmethod
+    def getBackSeconds(timeframe):
+        switcher = {
+            RedisTimeFrame.SEC10: 10,
+            RedisTimeFrame.MIN1: 60,
+            RedisTimeFrame.MIN2: 120,
+            RedisTimeFrame.MIN5: 300,
+        }
+        return switcher.get(timeframe, 60)
+
+    def redisAddBarAggregate(self, symbol, timeframe, ts):
+        startt = ts - RealTimeBars.getBackSeconds(timeframe)
+        self.BarAggregate(symbol, 'close', ts, timeframe, startt, ts)
+        self.BarAggregate(symbol, 'open', ts, timeframe, startt, ts)
+        self.BarAggregate(symbol, 'low', ts, timeframe, startt, ts)
+        self.BarAggregate(symbol, 'high', ts, timeframe, startt, ts)
+        self.BarAggregate(symbol, 'volume', ts, timeframe, startt, ts)
+
+    def RedisAddBarAggregation(self, data):
+        try:
+            ts = data['t']
+            # seconds2021 = 1609488000
+            symbol = data['S']
+            if ts % RealTimeBars.getBackSeconds(RedisTimeFrame.MIN2) == 0:
+                self.redisAddBarAggregate(symbol, RedisTimeFrame.MIN2, ts)
+            if ts % RealTimeBars.getBackSeconds(RedisTimeFrame.MIN5) == 0:
+                self.redisAddBarAggregate(symbol, RedisTimeFrame.MIN5, ts)
+        except Exception as e:
+            print(f'RedisAddBarAggregation: {e} {data} ')
+            return None
+
     def RedisAddBar(self, data):
         try:
             timeframe = RedisTimeFrame.MIN1
             ts = data['t']  # .seconds
             symbol = data['S']
-            bar_list = []
             self.rts.add(bar_key(symbol, "close", timeframe), ts, data['c'])
             self.rts.add(bar_key(symbol, "high", timeframe), ts, data['h'])
             self.rts.add(bar_key(symbol, "low", timeframe), ts, data['l'])
             self.rts.add(bar_key(symbol, "open", timeframe), ts, data['o'])
             self.rts.add(bar_key(symbol, "volume", timeframe), ts, data['v'])
         except Exception as e:
-            logging.info(f'RedisAddBar: {e}')
+            logging.info(f'RedisAddBar: {e} {data}')
             return None
 
     def _bar_realtime(self, rts, datatype, symbol, timeframe, startt, endt):
@@ -273,6 +354,7 @@ class RealTimeBars:
         try:
             switcher = {
                 RedisTimeFrame.REALTIME: self.realtimeDataSeconds,
+                RedisTimeFrame.SEC10: self.realtimeDataSeconds,
                 RedisTimeFrame.MIN1:  self.realtimeDataMinutes,
                 RedisTimeFrame.MIN2:  self.realtimeDataMinutes,
                 RedisTimeFrame.MIN5:  self.realtimeDataMinutes,

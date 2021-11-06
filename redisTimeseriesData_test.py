@@ -127,15 +127,16 @@ def test_realtimeDataHistorical():
     print(data)
     sample = [{"t": "2021-02-05T05:00:00Z", "o": 242.36, "h": 243.28, "l": 240.42, "c": 242.2, "v": 18055355, "n": 218268, "vw": 241.728827}, {"t": "2021-02-04T05:00:00Z", "o": 242.76, "h": 243.2399, "l": 240.37, "c": 242.01, "v": 25296111, "n": 269886, "vw": 241.458344}, {
         "t": "2021-02-03T05:00:00Z", "o": 239.8, "h": 245.09, "l": 239.26, "c": 243, "v": 27158104, "n": 289329, "vw": 242.771049}, {"t": "2021-02-02T05:00:00Z", "o": 241.06, "h": 242.31, "l": 238.69, "c": 239.51, "v": 25925275, "n": 299119, "vw": 240.268236}, {"t": "2021-02-01T05:00:00Z", "o": 235.16, "h": 242.5, "l": 232.43, "c": 239.65, "v": 33315153, "n": 401535, "vw": 238.758565}]
-
     assert data == sample
 
 
 def test_realtimeAddSecond():
-    symbol = 'TEST'
+    time.sleep(5)
     data = {'symbol': symbol,
             'close': 12.01, 'volume': 1000}
     for ix in range(0, 60):
+        rtb.RedisAddTrade(data)
+        rtb.RedisAddTrade(data)
         rtb.RedisAddTrade(data)
         time.sleep(1)
     timeframe = RedisTimeFrame.REALTIME

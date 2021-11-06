@@ -8,7 +8,7 @@ import asyncio
 import time
 from alpaca_trade_api.stream import Stream
 from alpaca_trade_api.common import URL
-from redisUtil import AlpacaStreamAccess, KeyName
+from redisUtil import AlpacaStreamAccess, TimeStamp
 from redisPubsub import RedisSubscriber, RedisPublisher
 from pubsubKeys import PUBSUB_KEYS
 

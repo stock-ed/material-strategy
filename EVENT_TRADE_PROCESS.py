@@ -50,9 +50,11 @@ class EventTradeScoreProcess:
                 price1 = stack['action']['filter'][0]
                 price2 = stack['action']['filter'][1]
                 newPrice = trade['close']
+                ts = stack['data'][0]['t']
                 point = self.threeBarPlay(newPrice, price1, price2)
                 data = {'type': stack['type'], 'symbol': stack['symbol'], 'period': stack['period'],
-                        'indicator': stack['action']['indicator'], 'point': point}
+                        'indicator': stack['action']['indicator'], 'timestamp': ts, 'point': point,
+                        'data': stack['data'], 'trade': trade}
                 self.publisher.publish(data)
         except Exception as e:
             logging.warning(f"Error EVENT_TRADE_PROCESS.addStock {e}")
@@ -78,4 +80,4 @@ if __name__ == "__main__":
     if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
         data = {"stack": [{"type": "threebars", "symbol": "FANG", "period": "2Min", "data": [{"t": 1635370080, "c": 10.4, "o": 10.6, "h": 10.8, "l": 10.15, "v": 2000.0}, {"t": 1635369960, "c": 10.4, "o": 10.6, "h": 10.8, "l": 10.15, "v": 2000.0}, {"t": 1635369840, "c": 10.4, "o": 10.6, "h": 10.8, "l": 10.15, "v": 2000.0}, {"t": 1635369960, "c": 10.6, "o": 10.6, "h": 10.8,
                                                                                                                                                                                                                                                                                                                                      "l": 10.25, "v": 2000.0}, {"t": 1635370080, "c": 10.2, "o": 10.3, "h": 10.5, "l": 10.05, "v": 2000.0}, {"t": 1635370320, "c": 10.7, "o": 10.1, "h": 10.8, "l": 10.05, "v": 2000.0}], "action": {"indicator": "price", "timeframe": "2Min", "filter": [10.4, 10.6], "timestamp": 1635370080, "operation": "ADD"}}], "trade": {"symbol": "FANG", "close": 10.5, "volume": 100}}
-        app.run(data)
+        app.addStock(data)

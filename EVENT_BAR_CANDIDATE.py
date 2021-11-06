@@ -45,6 +45,7 @@ class EventBarCandidate:
                 logging.info(
                     f"EVENT_BAR_CANDIDATE.EventBarCandidate.AddBar: {symbol} ")
                 self.rtb.RedisAddBar(data)
+                self.rtb.RedisAddBarAggregation(data)
             self.publish2Min(symbol, RedisTimeFrame.MIN2)
             self.publish2Min(symbol, RedisTimeFrame.MIN5)
         except Exception as e:

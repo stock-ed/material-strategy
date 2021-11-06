@@ -8,6 +8,7 @@ from alpaca_trade_api.common import URL
 from redistimeseries.client import Client
 import alpaca_trade_api as alpaca
 import datetime
+import os
 
 
 class StudyScores:
@@ -123,11 +124,15 @@ def bar_key(symbol: str, suffix: str, timeframe: str):
 
 
 class AlpacaAccess:
-    ALPACA_API_KEY = 'AKAV2Z5H0NJNXYF7K24D'
-    ALPACA_SECRET_KEY = '262cAEeIRrL1KEZYKSTjZA79tj25XWrMtvz0Bezu'
-    ALPACA_API_URL = 'https://api.alpaca.markets'
-    ALPACA_WS = 'wss://stream.data.alpaca.markets/v2'
-    ALPACA_FEED = 'sip'  # <- replace to SIP if you have PRO subscription
+    ALPACA_API_KEY = os.environ.get('ALPACA_API_KEY', 'AKAV2Z5H0NJNXYF7K24D')
+    ALPACA_SECRET_KEY = os.environ.get(
+        'ALPACA_SECRET_KEY', '262cAEeIRrL1KEZYKSTjZA79tj25XWrMtvz0Bezu')
+    ALPACA_API_URL = os.environ.get(
+        'ALPACA_API_URL', 'https://api.alpaca.markets')
+    ALPACA_WS = os.environ.get(
+        'ALPACA_WS', 'wss://stream.data.alpaca.markets/v2')
+    # <- replace to SIP if you have PRO subscription
+    ALPACA_FEED = os.environ.get('ALPACA_FEED', 'sip')
 
     @staticmethod
     def connection():
@@ -325,6 +330,10 @@ class TimeStamp:
         # return int(time.time() * 1000)
         # return int(time.time_ns() / 1000)
 
+    @staticmethod
+    def now_ns():
+        return int(time.time_ns())
+
 
 class SetInterval:
     def __init__(self, interval, action):
@@ -342,6 +351,10 @@ class SetInterval:
 
     def cancel(self):
         self.stopEvent.set()
+
+
+def GetColumn(matrix, i):
+    return [row[i] for row in matrix]
 
 
 if __name__ == "__main__":
