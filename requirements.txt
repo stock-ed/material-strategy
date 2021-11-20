@@ -1,3 +1,4 @@
 redistimeseries
 iexfinance
 pandas
+alpaca_trade_api
