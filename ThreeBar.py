@@ -14,13 +14,15 @@ from EVENT_TRADE_SCORE import EventTradeScore
 from EVENT_REALTIME_DATA import RealTimeData
 
 
-def main(isCreateTable=True):
+def main(self, isCreateTable=True):
     if (isCreateTable):
         tables = TimeseriesTable()
         tables.run()
     # p01 = Process(target=RealTimeData)
     # p01.start()
     # time.sleep(5)  # give the initial connection time to be established
+    logging.info("Function called......")
+
     p02 = Process(target=EventBarCandidate.run)
     p02.start()
     p03 = Process(target=StudyThreeBarsCandidates.run)
@@ -49,6 +51,8 @@ if __name__ == "__main__":
     logging.info("ThreeBar.py Started")
     args = sys.argv[1:]
     if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
+        print('coming in if')
         main(False)
     else:
+        print('coming in else')
         main()
