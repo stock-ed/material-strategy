@@ -169,3 +169,4 @@ if __name__ == '__main__':
     print('starting 1 minute data cycle.')
     SetInterval(60, lambda: MinInterval(symbol, period))
     SetInterval(5, lambda: TradeBar(symbol))
+

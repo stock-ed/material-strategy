@@ -1,5 +1,6 @@
 import sys
 import json
+import os
 import logging
 from pubsubKeys import PUBSUB_KEYS
 from redisPubsub import RedisPublisher, RedisSubscriber
@@ -9,10 +10,19 @@ from redisPubsub import RedisPublisher, RedisSubscriber
 
 class StudyThreeBarsFilter:
     _MinimumPriceJump = 0.2
+    _MinimumPrice = os.environ.get(
+        'THREEBAR_LIMIT_PRICE_LOW', 5.0)
+    _MaximumPrice = os.environ.get(
+        'THREEBAR_LIMIT_PRICE_HIGH', 20.0)
+    _MinimumPercent = os.environ.get(
+        'THREEBAR_LIMIT_PERCENT_LOW', 0.3)
+    _MaximumPercent = os.environ.get(
+        'THREEBAR_LIMIT_PERCENT_HIGH', 0.7)
 
     #
     # return a column in a array matrix
     #
+
     @staticmethod
     def _column(matrix, i):
         return [row[i] for row in matrix]
@@ -25,14 +35,14 @@ class StudyThreeBarsFilter:
 
     @staticmethod
     def _isFirstTwoBars(price0, price1, price2):
-        if (price0 < 3) or (price0 > 20):
+        if (price0 < StudyThreeBarsFilter._MinimumPrice) or (price0 > StudyThreeBarsFilter._MaximumPrice):
             return False
         first = price0 - price2
         second = price1 - price2
         if (abs(second) < StudyThreeBarsFilter._MinimumPriceJump):
             return False
         percentage = 0 if second == 0 else first / second
-        if percentage >= 0.3 and percentage < 0.7:
+        if percentage >= StudyThreeBarsFilter._MinimumPercent and percentage < StudyThreeBarsFilter._MaximumPercent:
             return True
         return False
 

@@ -4,6 +4,7 @@ import logging
 from redisHash import StoreStack
 from redisPubsub import RedisPublisher, RedisSubscriber
 from pubsubKeys import PUBSUB_KEYS
+from EVENT_BAR_NEWS_ADD import AddNewsSymbol
 
 
 class TradeNewStock:
@@ -24,6 +25,10 @@ class TradeNewStock:
                 data = {"stack": stk, "trade": trade}
                 self.publisherProcess.publish(data)
             self.publisherSave.publish(trade)
+            # add news symbol
+            logging.info(
+                f"EVENT_TRADE_ADD.AddNewsSymbol Call: {symbol}")
+            AddNewsSymbol(symbol)
         except Exception as e:
             logging.warning(f"Error EVENT_TRADE_NEW.addStock {e}")
 
