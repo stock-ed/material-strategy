@@ -4,6 +4,7 @@ import logging
 from redisHash import StoreStack
 from redisPubsub import RedisPublisher, RedisSubscriber
 from pubsubKeys import PUBSUB_KEYS
+from PROCESS_THREEBAR import Process_ThreeBar
 
 
 class EventTradeScoreProcess:
@@ -14,18 +15,18 @@ class EventTradeScoreProcess:
         self.subscriber = RedisSubscriber(
             PUBSUB_KEYS.EVENT_TRADE_PROCESS, None, self.addStock)
 
-    # two scoring.  This one tests for basic accpetable trade.
+    # # two scoring.  This one tests for basic accpetable trade.
 
-    def _isPriceRangeOptimal(self, newPrice, price1, price2):
-        return (newPrice < price2 and newPrice > price1)
+    # def _isPriceRangeOptimal(self, newPrice, price1, price2):
+    #     return (newPrice < price2 and newPrice > price1)
 
-    # two scoring.  This one tests for optimal trade pattern.
-    def _isPriceRangeUsable(self, newPrice, price1, price2):
-        priceChange = price2 - price1
-        priceTop = price2 + (priceChange / 2)
-        if (newPrice >= price2 and newPrice < priceTop):
-            return True
-        return False
+    # # two scoring.  This one tests for optimal trade pattern.
+    # def _isPriceRangeUsable(self, newPrice, price1, price2):
+    #     priceChange = price2 - price1
+    #     priceTop = price2 + (priceChange / 2)
+    #     if (newPrice >= price2 and newPrice < priceTop):
+    #         return True
+    #     return False
 
     #
     # score an individual stock pricing.
@@ -33,13 +34,13 @@ class EventTradeScoreProcess:
     # 2 point is given for acceptable trade.
     # 0 point is given for unacceptable trade.
     #
-    def threeBarPlay(self, newPrice, price1, price2):
-        point = 0
-        if (self._isPriceRangeOptimal(newPrice, price1, price2)):
-            point = 4
-        if (self._isPriceRangeUsable(newPrice, price1, price2)):
-            point = 2
-        return point
+    # def threeBarPlay(self, newPrice, price1, price2):
+    #     point = 0
+    #     if (self._isPriceRangeOptimal(newPrice, price1, price2)):
+    #         point = 4
+    #     if (self._isPriceRangeUsable(newPrice, price1, price2)):
+    #         point = 2
+    #     return point
 
     def addStock(self, data):
         try:
@@ -51,7 +52,8 @@ class EventTradeScoreProcess:
                 price2 = stack['action']['filter'][1]
                 newPrice = trade['close']
                 ts = stack['data'][0]['t']
-                point = self.threeBarPlay(newPrice, price1, price2)
+                # point = self.threeBarPlay(newPrice, price1, price2)
+                point = Process_ThreeBar.run(newPrice, price1, price2)
                 data = {'type': stack['type'], 'symbol': stack['symbol'], 'period': stack['period'],
                         'indicator': stack['action']['indicator'], 'timestamp': ts, 'point': point,
                         'data': stack['data'], 'trade': trade}

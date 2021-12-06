@@ -15,13 +15,39 @@ from EVENT_REALTIME_DATA import RealTimeData
 from EVENT_BAR_NEWS_ADD import RedisEventAddNewsSymbol
 
 
+def ThreadRun():
+    # multi threading class
+    time.sleep(5)  # give the initial connection time to be established
+    EventBarCandidate.run()
+    StudyThreeBarsCandidates.run()
+    RedisStack.run()
+    RedisTradeSubscription.run()
+    TradeNewStock.run()
+    EventTradeSave.run()
+    EventTradeScoreProcess.run()
+    EventTradeScore.run()
+
+
+def run(isCreateTable=True):
+    if (isCreateTable):
+        tables = TimeseriesTable()
+        tables.run()
+    p01 = Process(target=RealTimeData)
+    p01.start()
+    p02 = Process(target=ThreadRun)
+    p02.start()
+
+    while 1:
+        time.sleep(1)
+
+
 def main(isCreateTable=True):
     if (isCreateTable):
         tables = TimeseriesTable()
         tables.run()
-        p01 = Process(target=RealTimeData)
-        p01.start()
-        time.sleep(5)  # give the initial connection time to be established
+    p01 = Process(target=RealTimeData)
+    p01.start()
+    time.sleep(5)  # give the initial connection time to be established
     p02 = Process(target=EventBarCandidate.run)
     p02.start()
     p03 = Process(target=StudyThreeBarsCandidates.run)
@@ -51,6 +77,6 @@ if __name__ == "__main__":
     logging.warning("ThreeBar.py Started")
     args = sys.argv[1:]
     if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
-        main(False)
+        run()
     else:
-        main()
+        run(False)
