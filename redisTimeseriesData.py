@@ -181,7 +181,7 @@ class RealTimeBars:
             callback = RealTimeBars.aggregateOperation(prefix)
             colume = [row[1] for row in data]
             self.rts.add(bar_key(symbol, prefix, timeframe),
-                         ts, lambda: callback(colume))
+                         ts, callback(colume))
 
     @staticmethod
     def getBackSeconds(timeframe):
@@ -211,7 +211,7 @@ class RealTimeBars:
             if ts % RealTimeBars.getBackSeconds(RedisTimeFrame.MIN5) == 0:
                 self.redisAddBarAggregate(symbol, RedisTimeFrame.MIN5, ts)
         except Exception as e:
-            print(f'RedisAddBarAggregation: {e} {data} ')
+            logging.error(f'RedisAddBarAggregation: {e} {data} ')
             return None
 
     def RedisAddBar(self, data):

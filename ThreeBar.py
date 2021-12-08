@@ -27,6 +27,9 @@ def ThreadRun():
     EventTradeScoreProcess.run()
     EventTradeScore.run()
 
+    while 1:
+        time.sleep(1)
+
 
 def run(isCreateTable=True):
     if (isCreateTable):
@@ -77,6 +80,6 @@ if __name__ == "__main__":
     logging.warning("ThreeBar.py Started")
     args = sys.argv[1:]
     if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
-        run()
+        main()
     else:
-        run(False)
+        main(False)

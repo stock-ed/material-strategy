@@ -1,5 +1,5 @@
 import os
-
+import logging
 # Filter_ThreeBar
 
 
@@ -56,11 +56,15 @@ class Filter_ThreeBar:
     # It looks for 3 bar patterns on 3 or 4 bars.
     @staticmethod
     def potentialList(symbol, prices, timeframe):
-        if len(prices) > 2 and Filter_ThreeBar._isFirstTwoBars(prices[0][1], prices[1][1], prices[2][1]):
-            return True, Filter_ThreeBar.barCandidate(prices[0][1], prices[1][1], timeframe, prices[0][0], 'ADD')
-        elif len(prices) > 3 and Filter_ThreeBar._isFirstTwoBars(prices[0][1], prices[2][1], prices[3][1]):
-            return True, Filter_ThreeBar.barCandidate(prices[0][1], prices[2][1], timeframe, prices[0][0], 'ADD')
-        else:
+        try:
+            if len(prices) > 2 and Filter_ThreeBar._isFirstTwoBars(prices[0][1], prices[1][1], prices[2][1]):
+                return True, Filter_ThreeBar.barCandidate(prices[0][1], prices[1][1], timeframe, prices[0][0], 'ADD')
+            elif len(prices) > 3 and Filter_ThreeBar._isFirstTwoBars(prices[0][1], prices[2][1], prices[3][1]):
+                return True, Filter_ThreeBar.barCandidate(prices[0][1], prices[2][1], timeframe, prices[0][0], 'ADD')
+            else:
+                return False, Filter_ThreeBar.barCandidate(0, 0, timeframe, prices[0][0], 'DEL')
+        except Exception as e:
+            logging.error(e)
             return False, Filter_ThreeBar.barCandidate(0, 0, timeframe, prices[0][0], 'DEL')
         # else:
         #     return {'symbol': symbol, 'value': {
@@ -72,3 +76,46 @@ class Filter_ThreeBar:
     @staticmethod
     def run(prices, timeframe):
         return Filter_ThreeBar.potentialList("NONE", prices, timeframe)
+
+    @staticmethod
+    def closes(prices, timeframe):
+        return Filter_ThreeBar.potentialList("NONE", prices, timeframe)
+
+
+class Filter_ThreeBars:
+    def __init__(self, data):
+        self.data = data
+
+    def getColumneData(self, data, column):
+        result = []
+        for item in data:
+            item = (item['t'], item['c'])
+            result.append(item)
+        return result
+
+    def getVolumeData(self, data):
+        return self.getColumneData(data, 'v')
+
+    def getCloseData(self, data):
+        return self.getColumneData(data, 'c')
+
+    def getCloses(self, dataList=None):
+        if (dataList == None):
+            dataList = self.data
+        closes = self.getCloseData(dataList)
+
+    def filterOnCloses(self, timeframe, dataList=None):
+        if (dataList == None):
+            dataList = self.data
+        closes = self.getCloseData(dataList)
+        return Filter_ThreeBar.closes(closes, timeframe)
+
+    def getVolumes(self, timeframe, dataList=None):
+        if (dataList == None):
+            dataList = self.data
+        volumes = self.getVolumeData(dataList)
+
+    def filterOnVolumes(self, timeframe, dataList=None):
+        if (dataList == None):
+            dataList = self.data
+        volumes = self.getVolumeData(dataList)
