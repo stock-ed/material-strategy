@@ -1,6 +1,7 @@
 import os
 import logging
 # Filter_ThreeBar
+from redisUtil import RedisTimeFrame
 
 
 class Filter_ThreeBar:
@@ -82,14 +83,28 @@ class Filter_ThreeBar:
         return Filter_ThreeBar.potentialList("NONE", prices, timeframe)
 
 
-class Filter_ThreeBars:
-    def __init__(self, data):
+class Filter_3Bars:
+    _MinimumPriceJump = 0.2
+    # convert string to integer
+
+    _MinimumPrice = float(os.environ.get(
+        'THREEBAR_LIMIT_PRICE_LOW', '5.0'))
+    _MaximumPrice = float(os.environ.get(
+        'THREEBAR_LIMIT_PRICE_HIGH', '20.0'))
+    _MinimumPercent = float(os.environ.get(
+        'THREEBAR_LIMIT_PERCENT_LOW', '0.3'))
+    _MaximumPercent = float(os.environ.get(
+        'THREEBAR_LIMIT_PERCENT_HIGH', '0.7'))
+    _MinVolume = float(os.environ.get('THREEBAR_LIMIT_VOLUME', '1000'))
+
+    def __init__(self, data, timeframe):
         self.data = data
+        self.timeframe = timeframe
 
     def getColumneData(self, data, column):
         result = []
         for item in data:
-            item = (item['t'], item['c'])
+            item = (item['t'], item[column])
             result.append(item)
         return result
 
@@ -104,18 +119,83 @@ class Filter_ThreeBars:
             dataList = self.data
         closes = self.getCloseData(dataList)
 
-    def filterOnCloses(self, timeframe, dataList=None):
-        if (dataList == None):
-            dataList = self.data
-        closes = self.getCloseData(dataList)
-        return Filter_ThreeBar.closes(closes, timeframe)
-
     def getVolumes(self, timeframe, dataList=None):
         if (dataList == None):
             dataList = self.data
         volumes = self.getVolumeData(dataList)
 
-    def filterOnVolumes(self, timeframe, dataList=None):
-        if (dataList == None):
-            dataList = self.data
-        volumes = self.getVolumeData(dataList)
+    def priceCheck(self, price0, price1, price2):
+        if (price0 < Filter_3Bars._MinimumPrice) or (price0 > Filter_3Bars._MaximumPrice):
+            return False
+        first = price0 - price2
+        second = price1 - price2
+        if (abs(second) < Filter_3Bars._MinimumPriceJump):
+            return False
+        percentage = 0 if second == 0 else first / second
+        if percentage >= Filter_3Bars._MinimumPercent and percentage < Filter_3Bars._MaximumPercent:
+            return True
+        return False
+
+    # This is the data format for the Stack.
+    def barCandidate(self, firstPrice, secondPrice, timeframe, ts, op):
+        return {"indicator": "price",
+                "timeframe": timeframe,
+                "filter": [firstPrice, secondPrice],
+                "timestamp": ts,
+                "operation": op
+                }
+
+    # It looks for 3 bar patterns on 3 or 4 bars.
+    def closePriceCheck(self, prices, timeframe):
+        try:
+            price0 = prices[0][1]
+            price1 = prices[1][1]
+            price2 = prices[2][1]
+            price3 = prices[3][1]
+            timestamp = prices[0][0]
+            if len(prices) > 2 and self.priceCheck(price0, price1, price2):
+                return True, self.barCandidate(price0, price1, timeframe, timestamp, 'ADD')
+            elif len(prices) > 3 and self.priceCheck(price0, price2, price3):
+                return True, self.barCandidate(price0, price2, timeframe, timestamp, 'ADD')
+            else:
+                return False, self.barCandidate(0, 0, timeframe, timestamp, 'DEL')
+        except Exception as e:
+            logging.error(e)
+            timestamp = prices[0][0]
+            return False, self.barCandidate(0, 0, timeframe, timestamp, 'DEL')
+
+    def volumeCheck(self, volume0, volume1, volume2):
+        if (volume0 < Filter_3Bars._MinVolume) or (volume0 > Filter_3Bars._MinVolume):
+            return False
+        first = volume0 - volume2
+        second = volume1 - volume2
+        if (abs(second) < Filter_3Bars._MinimumPriceJump):
+            return False
+        percentage = 0 if second == 0 else first / second
+        if percentage >= Filter_3Bars._MinimumPercent and percentage < Filter_3Bars._MaximumPercent:
+            return True
+        return False
+
+    def volumeCheck(self, volumes, timeframe):
+        switcher = {
+            RedisTimeFrame.MIN1: 1,
+            RedisTimeFrame.MIN2: 2,
+            RedisTimeFrame.MIN5: 5
+        }
+        tfMultiple = switcher.get(timeframe)
+        v = volumes[0][1]
+        minVolume = tfMultiple * Filter_3Bars._MinVolume
+        return (len(volumes) > 2 and v > minVolume)
+
+    def run(self, data=None, timeframe=None):
+        if data == None:
+            data = self.data
+        if timeframe == None:
+            timeframe = self.timeframe
+        volumes = self.getVolumeData(data)
+        if (self.volumeCheck(volumes, timeframe)):
+            closes = self.getCloseData(data)
+            return self.closePriceCheck(closes, timeframe)
+        else:
+            timestamp = data[0]['t']
+            return False, self.barCandidate(0, 0, timeframe, timestamp, 'DEL')

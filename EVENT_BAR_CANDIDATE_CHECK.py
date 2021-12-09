@@ -4,7 +4,7 @@ import os
 import logging
 from pubsubKeys import PUBSUB_KEYS
 from redisPubsub import RedisPublisher, RedisSubscriber
-from FILTER_THREEBAR import Filter_ThreeBar
+from FILTER_THREEBAR import Filter_ThreeBar, Filter_3Bars
 
 #
 # This class filters the Acitve Bars (stocks that are moving)
@@ -44,9 +44,12 @@ class StudyThreeBarsCandidates:
             logging.info(
                 f'EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck {symbol}')
             timeframe = data['period']
-            prices = self.getPriceData(data['data'])
-            _, result = Filter_ThreeBar.potentialList(
-                symbol, prices, timeframe)
+            # prices = self.getPriceData(data['data'])
+            # _, result = Filter_ThreeBar.potentialList(
+            #     symbol, prices, timeframe)
+            filter = Filter_3Bars(data['data'], timeframe)
+            _, result = filter.run()
+            #
             data['action'] = result
             self.publisher.publish(data)
             self.publisherTrade.publish(data)
