@@ -58,12 +58,17 @@ class Filter_ThreeBar:
     @staticmethod
     def potentialList(symbol, prices, timeframe):
         try:
-            if len(prices) > 2 and Filter_ThreeBar._isFirstTwoBars(prices[0][1], prices[1][1], prices[2][1]):
-                return True, Filter_ThreeBar.barCandidate(prices[0][1], prices[1][1], timeframe, prices[0][0], 'ADD')
-            elif len(prices) > 3 and Filter_ThreeBar._isFirstTwoBars(prices[0][1], prices[2][1], prices[3][1]):
-                return True, Filter_ThreeBar.barCandidate(prices[0][1], prices[2][1], timeframe, prices[0][0], 'ADD')
+            timestamp = prices[0][0]
+            price0 = prices[0][1]
+            price1 = prices[1][1]
+            price2 = prices[2][1]
+            price3 = prices[3][1]
+            if len(prices) > 2 and Filter_ThreeBar._isFirstTwoBars(price0, price1, price2):
+                return True, Filter_ThreeBar.barCandidate(price0, price1, timeframe, timestamp, 'ADD')
+            elif len(prices) > 3 and Filter_ThreeBar._isFirstTwoBars(price0, price2, price3):
+                return True, Filter_ThreeBar.barCandidate(price0, price2, timeframe, timestamp, 'ADD')
             else:
-                return False, Filter_ThreeBar.barCandidate(0, 0, timeframe, prices[0][0], 'DEL')
+                return False, Filter_ThreeBar.barCandidate(0, 0, timeframe, timestamp, 'DEL')
         except Exception as e:
             logging.error(e)
             return False, Filter_ThreeBar.barCandidate(0, 0, timeframe, prices[0][0], 'DEL')
@@ -95,7 +100,7 @@ class Filter_3Bars:
         'THREEBAR_LIMIT_PERCENT_LOW', '0.3'))
     _MaximumPercent = float(os.environ.get(
         'THREEBAR_LIMIT_PERCENT_HIGH', '0.7'))
-    _MinVolume = float(os.environ.get('THREEBAR_LIMIT_VOLUME', '1000'))
+    _MinVolume = float(os.environ.get('THREEBAR_LIMIT_VOLUME', '50000'))
 
     def __init__(self, data, timeframe):
         self.data = data
@@ -163,18 +168,6 @@ class Filter_3Bars:
             logging.error(e)
             timestamp = prices[0][0]
             return False, self.barCandidate(0, 0, timeframe, timestamp, 'DEL')
-
-    def volumeCheck(self, volume0, volume1, volume2):
-        if (volume0 < Filter_3Bars._MinVolume) or (volume0 > Filter_3Bars._MinVolume):
-            return False
-        first = volume0 - volume2
-        second = volume1 - volume2
-        if (abs(second) < Filter_3Bars._MinimumPriceJump):
-            return False
-        percentage = 0 if second == 0 else first / second
-        if percentage >= Filter_3Bars._MinimumPercent and percentage < Filter_3Bars._MaximumPercent:
-            return True
-        return False
 
     def volumeCheck(self, volumes, timeframe):
         switcher = {

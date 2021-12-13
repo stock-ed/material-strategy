@@ -35,8 +35,8 @@ def run(isCreateTable=True):
     if (isCreateTable):
         tables = TimeseriesTable()
         tables.run()
-    p01 = Process(target=RealTimeData)
-    p01.start()
+        p01 = Process(target=RealTimeData)
+        p01.start()
     p02 = Process(target=ThreadRun)
     p02.start()
 
@@ -48,9 +48,9 @@ def main(isCreateTable=True):
     if (isCreateTable):
         tables = TimeseriesTable()
         tables.run()
-    p01 = Process(target=RealTimeData)
-    p01.start()
-    time.sleep(5)  # give the initial connection time to be established
+        p01 = Process(target=RealTimeData)
+        p01.start()
+        time.sleep(5)  # give the initial connection time to be established
     p02 = Process(target=EventBarCandidate.run)
     p02.start()
     p03 = Process(target=StudyThreeBarsCandidates.run)
@@ -75,7 +75,7 @@ def main(isCreateTable=True):
 
 if __name__ == "__main__":
     formatter = '%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s'
-    logging.basicConfig(level=logging.WARN, format=formatter,
+    logging.basicConfig(level=logging.INFO, format=formatter,
                         datefmt='%d-%b-%y %H:%M:%S', filename="three-bar.log")
     logging.warning("ThreeBar.py Started")
     args = sys.argv[1:]

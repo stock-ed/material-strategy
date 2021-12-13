@@ -20,10 +20,12 @@ from FILTER_THREEBAR import Filter_ThreeBar, Filter_3Bars
 
 class StudyThreeBarsCandidates:
 
-    def __init__(self):
+    def __init__(self, pubKeyStack=None, pubTrade=None):
         # StoreStack: class to access the redis Stack.
-        self.publisher = RedisPublisher(PUBSUB_KEYS.EVENT_BAR_STACK_ADD)
-        self.publisherTrade = RedisPublisher(PUBSUB_KEYS.EVENT_BAR_TRADE_ADD)
+        self.publisher = RedisPublisher(
+            PUBSUB_KEYS.EVENT_BAR_STACK_ADD) if pubKeyStack is None else pubKeyStack
+        self.publisherTrade = RedisPublisher(
+            PUBSUB_KEYS.EVENT_BAR_TRADE_ADD) if pubTrade is None else pubTrade
         self.subscriber = RedisSubscriber(
             PUBSUB_KEYS.EVENT_BAR_CANDIDATE_CHECK, None, self.filterCheck)
 
@@ -42,7 +44,7 @@ class StudyThreeBarsCandidates:
         try:
             symbol = data['symbol']
             logging.info(
-                f'EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck {symbol}')
+                f'EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck {symbol} - {data}')
             timeframe = data['period']
             # prices = self.getPriceData(data['data'])
             # _, result = Filter_ThreeBar.potentialList(
