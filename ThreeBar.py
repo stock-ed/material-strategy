@@ -14,7 +14,7 @@ from EVENT_TRADE_SCORE import EventTradeScore
 from EVENT_REALTIME_DATA import RealTimeData
 
 
-def main(self, isCreateTable=True):
+def main(isCreateTable=True):
     if (isCreateTable):
         tables = TimeseriesTable()
         tables.run()
