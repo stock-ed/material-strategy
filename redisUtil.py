@@ -171,7 +171,7 @@ class TimeSeriesAccess:
     @staticmethod
     def connection(r=None):
         if (r == None):
-            return Client(host='127.0.0.1', port=6379)
+            return Client(host='54.193.144.196', port=6379)
         else:
             return r
 
@@ -179,7 +179,7 @@ class TimeSeriesAccess:
     def connect(r=None):
         if (r == None):
             rds = redis.StrictRedis(
-                host='127.0.0.1', port=6379, db=0)
+                host='54.193.144.196', port=6379, db=0)
             return redis.TimeSeries(rds, base_key='my_timeseries')
         else:
             return r
