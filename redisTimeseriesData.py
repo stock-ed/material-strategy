@@ -162,6 +162,18 @@ class RealTimeBars:
         }
         return switcher.get(prefix, RealTimeBars.lastOne)
 
+    def addBarAndFillGap(self, key, ts, value, timeframe, callback):
+        timeStampStep = self.getBackSeconds(timeframe)
+        data = self.rts.hgetall(key)
+        if len(data) > 0:
+            # get last time stamp
+            lastts = data[0][0]
+            while lastts + timeStampStep <= ts:
+                lastts += timeStampStep
+                self.rts.add(key, lastts, value, callback)
+        else:
+            self.rts.add(key, ts, value)
+
     def BarAggregate(self, symbol, prefix, ts, timeframe, startt, endt):
         data = self.rts.revrange(
             bar_key(symbol, prefix, RedisTimeFrame.MIN1), from_time=startt, to_time=endt)
@@ -199,7 +211,7 @@ class RealTimeBars:
             if ts % RealTimeBars.getBackSeconds(RedisTimeFrame.MIN5) == 0:
                 self.redisAddBarAggregate(symbol, RedisTimeFrame.MIN5, ts)
         except Exception as e:
-            print(f'RedisAddBarAggregation: {e} {data} ')
+            logging.error(f'RedisAddBarAggregation: {e} {data} ')
             return None
 
     def RedisAddBar(self, data):

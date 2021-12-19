@@ -9,12 +9,12 @@ from redisUtil import RedisTimeFrame
 class EventBarCandidate:
     '''A 1-Minute Bar happened.  Save the data.  And get 2 min and 5 min data for analysis later.'''
 
-    def __init__(self):
+    def __init__(self, pubDataCheck=None, pubDataSave=None):
         self.rtb = RealTimeBars()
         self.publisher_check = RedisPublisher(
-            PUBSUB_KEYS.EVENT_BAR_CANDIDATE_CHECK)
+            PUBSUB_KEYS.EVENT_BAR_CANDIDATE_CHECK) if pubDataCheck is None else pubDataCheck
         self.publisher_save = RedisPublisher(
-            PUBSUB_KEYS.EVENT_BAR_SAVE)
+            PUBSUB_KEYS.EVENT_BAR_SAVE) if pubDataSave is None else pubDataSave
         self.subscriber = RedisSubscriber(
             PUBSUB_KEYS.EVENT_BAR_CANDIDATE, None, self.AddBar)
 
@@ -43,7 +43,7 @@ class EventBarCandidate:
             else:
                 symbol = data['S']
                 logging.info(
-                    f"EVENT_BAR_CANDIDATE.EventBarCandidate.AddBar: {symbol} ")
+                    f"EVENT_BAR_CANDIDATE.EventBarCandidate.AddBar: {symbol} - {data} ")
                 self.rtb.RedisAddBar(data)
                 self.rtb.RedisAddBarAggregation(data)
             self.publish2Min(symbol, RedisTimeFrame.MIN2)

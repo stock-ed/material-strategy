@@ -4,6 +4,7 @@ import json
 from redisHash import StoreTradeSubscription
 from redisPubsub import RedisPublisher, RedisSubscriber
 from pubsubKeys import PUBSUB_KEYS
+from EVENT_BAR_NEWS_ADD import AddNewsSymbol
 
 
 class RedisTradeSubscription:
@@ -23,6 +24,10 @@ class RedisTradeSubscription:
                 data = {"symbol": symbol,
                         "operation": "SUBSCRIBE"}
                 self.publisher.publish(data)
+            # # add news symbol
+            # logging.info(
+            #     f"EVENT_TRADE_ADD.AddNewsSymbol Call: {symbol}")
+            # AddNewsSymbol(symbol)
         except Exception as e:
             logging.error(
                 f"Error EVENT_TRADE_ADD.RedisTradeSubscription.start: {e} {data} ")

@@ -267,3 +267,7 @@ curl --header 'Accept: text/event-stream' https://cloud-sse.iexapis.com/stable/s
 ts.range data_close_1MIN:FANG 0 -1
 flushall
 keys \*
+
+# test
+
+python3 test-realtime-data.py -t

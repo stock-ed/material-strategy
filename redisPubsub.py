@@ -1,5 +1,6 @@
 import threading
 import redis
+import logging
 import json
 from redisTimeseriesData import RealTimeBars
 from redisUtil import KeyName, RedisAccess
@@ -17,11 +18,14 @@ class RedisSubscriber(threading.Thread):
         return self.redis
 
     def work(self, package):
-        if (self.callback == None):
-            print(package['channel'], ":", package['data'])
-        else:
-            data = json.loads(package['data'])
-            self.callback(data)
+        try:
+            if (self.callback == None):
+                print(package['channel'], ":", package['data'])
+            else:
+                data = json.loads(package['data'])
+                self.callback(data)
+        except Exception as e:
+            logging.error(e)
 
     def run(self):
         for package in self.pubsub.listen():

@@ -26,43 +26,55 @@
 #     "next_page_token": "null"
 # }
 
-from redisTimeseriesData import RealTimeBars
-from redisUtil import RedisTimeFrame, TimeStamp, AlpacaAccess
-from datetime import datetime
+# from redisTimeseriesData import RealTimeBars
+# from redisUtil import RedisTimeFrame, TimeStamp, AlpacaAccess
+# from datetime import datetime
 
-rtb = RealTimeBars()
-
-
-def print_bar(data):
-    print("Bars:")
-    for bar in data["data"]:
-
-        # timestamp to datetime
-        dt_object = datetime.fromtimestamp(bar['t'])
-        # format datetime to string
-        dt_string = dt_object.strftime("%H:%M:%S")
-        bar['t'] = dt_string
-        print("\t{}".format(bar))
+# rtb = RealTimeBars()
 
 
-def print_datetime_now():
-    # timestamp to datetime
-    dt_object = datetime.fromtimestamp(TimeStamp.now())
-    # format datetime to string
-    dt_string = dt_object.strftime("%H:%M:%S")
-    print("\t{}".format(dt_string))
+# def print_bar(data):
+#     print("Bars:")
+#     for bar in data["data"]:
+
+#         # timestamp to datetime
+#         dt_object = datetime.fromtimestamp(bar['t'])
+#         # format datetime to string
+#         dt_string = dt_object.strftime("%H:%M:%S")
+#         bar['t'] = dt_string
+#         print("\t{}".format(bar))
 
 
-symbol = "FANG"
-data1 = rtb.RedisGetRealtimeData(None, symbol, RedisTimeFrame.MIN1)
-data2 = rtb.RedisGetRealtimeData(None, symbol, RedisTimeFrame.MIN2)
-data5 = rtb.RedisGetRealtimeData(None, symbol, RedisTimeFrame.MIN5)
+# def print_datetime_now():
+#     # timestamp to datetime
+#     dt_object = datetime.fromtimestamp(TimeStamp.now())
+#     # format datetime to string
+#     dt_string = dt_object.strftime("%H:%M:%S")
+#     print("\t{}".format(dt_string))
 
-print_datetime_now()
-print_bar(data1)
-print_bar(data2)
-print_bar(data5)
 
-api = AlpacaAccess.connection()
-assets = api.list_assets(status='active')
-print(assets)
+# symbol = "FANG"
+# data1 = rtb.RedisGetRealtimeData(None, symbol, RedisTimeFrame.MIN1)
+# data2 = rtb.RedisGetRealtimeData(None, symbol, RedisTimeFrame.MIN2)
+# data5 = rtb.RedisGetRealtimeData(None, symbol, RedisTimeFrame.MIN5)
+
+# print_datetime_now()
+# print_bar(data1)
+# print_bar(data2)
+# print_bar(data5)
+
+# api = AlpacaAccess.connection()
+# assets = api.list_assets(status='active')
+# print(assets)
+
+def sqr(x):
+    return x ** 2
+
+
+def takeit(func):
+    data = func()
+    print(data)
+
+
+# use lambda
+takeit(lambda: sqr(5))

@@ -1,67 +1,10 @@
 import sys
 import json
+import os
 import logging
 from pubsubKeys import PUBSUB_KEYS
 from redisPubsub import RedisPublisher, RedisSubscriber
-
-
-# StudyThreeBarsFilter
-
-class StudyThreeBarsFilter:
-    _MinimumPriceJump = 0.2
-
-    #
-    # return a column in a array matrix
-    #
-    @staticmethod
-    def _column(matrix, i):
-        return [row[i] for row in matrix]
-
-    # In 3 bar play, it looks for a pattern like this.
-    # price = [2, 4, 3].  There is a sharp rise of price from 2 to 4.
-    # and it follows a drop to 3 (or 50% retrace).  This pattern may happen
-    # across 3 or 4 bars.  We are looking for that pattern between 3 prices passed in.
-    #
-
-    @staticmethod
-    def _isFirstTwoBars(price0, price1, price2):
-        if (price0 < 3) or (price0 > 20):
-            return False
-        first = price0 - price2
-        second = price1 - price2
-        if (abs(second) < StudyThreeBarsFilter._MinimumPriceJump):
-            return False
-        percentage = 0 if second == 0 else first / second
-        if percentage >= 0.3 and percentage < 0.7:
-            return True
-        return False
-
-    # This is the data format for the Stack.
-    @staticmethod
-    def barCandidate(firstPrice, secondPrice, timeframe, ts, op):
-        return {"indicator": "price",
-                "timeframe": timeframe,
-                "filter": [firstPrice, secondPrice],
-                "timestamp": ts,
-                "operation": op
-                }
-
-    # It looks for 3 bar patterns on 3 or 4 bars.
-    @staticmethod
-    def potentialList(symbol, prices, timeframe):
-        if len(prices) > 2 and StudyThreeBarsFilter._isFirstTwoBars(prices[0][1], prices[1][1], prices[2][1]):
-            return True, StudyThreeBarsFilter.barCandidate(prices[0][1], prices[1][1], timeframe, prices[0][0], 'ADD')
-        elif len(prices) > 3 and StudyThreeBarsFilter._isFirstTwoBars(prices[0][1], prices[2][1], prices[3][1]):
-            return True, StudyThreeBarsFilter.barCandidate(prices[0][1], prices[2][1], timeframe, prices[0][0], 'ADD')
-        else:
-            return False, StudyThreeBarsFilter.barCandidate(0, 0, timeframe, prices[0][0], 'DEL')
-        # else:
-        #     return {'symbol': symbol, 'value': {
-        #         'firstPrice': 14.00,
-        #         'secondPrice': 15.00,
-        #         'thirdPrice': 14.52,
-        #     }}
-
+from FILTER_THREEBAR import Filter_ThreeBar, Filter_3Bars
 
 #
 # This class filters the Acitve Bars (stocks that are moving)
@@ -73,12 +16,16 @@ class StudyThreeBarsFilter:
 # real-time live data.  We subscribe to the trade stream of the
 # stocks taht are in the Stack
 #
+
+
 class StudyThreeBarsCandidates:
 
-    def __init__(self):
+    def __init__(self, pubKeyStack=None, pubTrade=None):
         # StoreStack: class to access the redis Stack.
-        self.publisher = RedisPublisher(PUBSUB_KEYS.EVENT_BAR_STACK_ADD)
-        self.publisherTrade = RedisPublisher(PUBSUB_KEYS.EVENT_BAR_TRADE_ADD)
+        self.publisher = RedisPublisher(
+            PUBSUB_KEYS.EVENT_BAR_STACK_ADD) if pubKeyStack is None else pubKeyStack
+        self.publisherTrade = RedisPublisher(
+            PUBSUB_KEYS.EVENT_BAR_TRADE_ADD) if pubTrade is None else pubTrade
         self.subscriber = RedisSubscriber(
             PUBSUB_KEYS.EVENT_BAR_CANDIDATE_CHECK, None, self.filterCheck)
 
@@ -97,11 +44,14 @@ class StudyThreeBarsCandidates:
         try:
             symbol = data['symbol']
             logging.info(
-                f'EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck {symbol}')
+                f'EVENT_BAR_CANDIDATE_CHECK.StudyThreeBarsCandidates.filterCheck {symbol} - {data}')
             timeframe = data['period']
-            prices = self.getPriceData(data['data'])
-            _, result = StudyThreeBarsFilter.potentialList(
-                symbol, prices, timeframe)
+            # prices = self.getPriceData(data['data'])
+            # _, result = Filter_ThreeBar.potentialList(
+            #     symbol, prices, timeframe)
+            filter = Filter_3Bars(data['data'], timeframe)
+            _, result = filter.run()
+            #
             data['action'] = result
             self.publisher.publish(data)
             self.publisherTrade.publish(data)

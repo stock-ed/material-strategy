@@ -30,22 +30,22 @@ bars5Min = []
 
 def create2MinBars(symbol):
     open = 10.10
-    close = 10.20
+    close = 10.00
     high = 10.30
-    low = 10.05
+    low = 9.05
     change = 0
-    bars2Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars2Min.append(barData(open, close, high, low, 1000, symbol, change))
-    change = 0.50
-    bars2Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars2Min.append(barData(open, close, high, low, 1000, symbol, change))
+    bars2Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars2Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    change = 1.00
+    bars2Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars2Min.append(barData(open, close, high, low, 2700000, symbol, change))
     # start 4 bar play
-    bars2Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars2Min.append(barData(open, close, high, low, 1000, symbol, change))
+    bars2Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars2Min.append(barData(open, close, high, low, 2700000, symbol, change))
     # end of 4 bar play
-    change = 0.20
-    bars2Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars2Min.append(barData(open, close, high, low, 1000, symbol, change))
+    change = 0.50
+    bars2Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars2Min.append(barData(open, close, high, low, 2700000, symbol, change))
 
 
 def getNext2MinBar(symbol):
@@ -59,27 +59,27 @@ def getNext2MinBar(symbol):
 
 def create5MinBars(symbol):
     open = 10.10
-    close = 10.20
+    close = 10.00
     high = 10.30
     low = 10.05
     change = 0
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    change = 1.00
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
     change = 0.50
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    change = 0.20
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
-    bars5Min.append(barData(open, close, high, low, 1000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
+    bars5Min.append(barData(open, close, high, low, 2700000, symbol, change))
 
 
 def getNext5MinBar(symbol):
@@ -101,7 +101,7 @@ publisherTrade: RedisPublisher = RedisPublisher(PUBSUB_KEYS.EVENT_TRADE_NEW)
 
 def TradeBar(symbol: str):
     data = {'symbol': symbol,
-            'close': 10.45, 'volume': 100}
+            'close': 10.45, 'volume': 70000}
     logging.info(f'TRADE: {data}')
     publisherTrade.publish(data)
 
