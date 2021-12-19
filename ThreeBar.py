@@ -75,7 +75,7 @@ def main(isCreateTable=True):
 
 if __name__ == "__main__":
     formatter = '%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s'
-    logging.basicConfig(level=logging.INFO, format=formatter,
+    logging.basicConfig(level=logging.WARN, format=formatter,
                         datefmt='%d-%b-%y %H:%M:%S', filename="three-bar.log")
     logging.warning("ThreeBar.py Started")
     args = sys.argv[1:]
