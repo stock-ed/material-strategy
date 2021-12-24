@@ -80,6 +80,6 @@ if __name__ == "__main__":
     logging.warning("ThreeBar.py Started")
     args = sys.argv[1:]
     if len(args) > 0 and (args[0] == "-t" or args[0] == "-table"):
-        run()
-    else:
         run(False)
+    else:
+        run()
